@@ -27,14 +27,26 @@ public class GameManager : MonoBehaviour
         {
             maxBoids = (int)debugPanel.maxBoidSlider.GetValue();
             boidArray = GameObject.FindGameObjectsWithTag("Boid");
-        }
-        if (boidArray.Length < maxBoids)
-        {
-            SpawnBoid();
-        }
-        else if (boidArray.Length > maxBoids)
-        {
-            DespawnBoid();
+            if (boidArray.Length < maxBoids)
+            {
+                SpawnBoid();
+            }
+            else if (boidArray.Length > maxBoids)
+            {
+                DespawnBoid();
+            }
+            //sets variables
+            foreach(GameObject boid in boidArray)
+            {
+                boidScript = boid.GetComponent<Boid>();
+                boidScript.SetSpeed(debugPanel.speedSlider.GetValue());
+                boidScript.SetCohesionRadius(debugPanel.cohesionRadiusSlider.GetValue());
+                boidScript.SetSeparationRadius(debugPanel.separationRadiusSlider.GetValue());
+                boidScript.SetAlignmentRadius(debugPanel.alignmentRadiusSlider.GetValue());
+                boidScript.SetCohesionForce(debugPanel.cohesionForceSlider.GetValue());
+                boidScript.SetSeparationForce(debugPanel.separationForceSlider.GetValue());
+                boidScript.SetAlignmentForce(debugPanel.alignmentForceSlider.GetValue());
+            }
         }
     }
 
@@ -44,7 +56,7 @@ public class GameManager : MonoBehaviour
         float ySpawn = 0.5f;
         float zSpawn = Random.Range(-screenBounds.x, screenBounds.x);
         Vector3 spawnPos = new Vector3(xSpawn, ySpawn, zSpawn);
-        float yRot = Random.Range(0f, 1f);
+        float yRot = Random.Range(-1f, 1f);
         Quaternion spawnRot = new Quaternion(0f,yRot,0f,1f);
         Instantiate(boidPrefab, spawnPos, spawnRot);
     }

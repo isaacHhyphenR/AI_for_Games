@@ -120,8 +120,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   debugPanel: {fileID: 0}
-  speed: 5
-  maxSpeed: 10
+  speed: 10
   cohesionRadius: 10
   separationRadius: 3
   alignmentRadius: 10

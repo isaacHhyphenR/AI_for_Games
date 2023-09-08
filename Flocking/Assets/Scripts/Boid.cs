@@ -8,7 +8,6 @@ public class Boid : MonoBehaviour
 {
     [SerializeField] DebugPanel debugPanel;
     [SerializeField] float speed;
-    [SerializeField] float maxSpeed;
     [SerializeField] float cohesionRadius;
     [SerializeField] float separationRadius;
     [SerializeField] float alignmentRadius;
@@ -45,7 +44,7 @@ public class Boid : MonoBehaviour
         prevVelocity = velocity;
         Vector3 force = Cohesion() * cohesionForce + Separation() * separationForce + Alignment() * alignmentForce;
         velocity += force * Time.deltaTime * speed;
-        velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
+        velocity = Vector3.ClampMagnitude(velocity, speed);
         transform.LookAt(transform.position + velocity * Time.deltaTime, Vector3.up); //turn to face the correct direction
         transform.position += velocity * Time.deltaTime; //actually do the movement
 
@@ -182,5 +181,34 @@ public class Boid : MonoBehaviour
     public Vector3 GetBounds()
     {
         return screenBounds;
+    }
+
+    public void SetSpeed(float value)
+    {
+        speed = value;
+    }
+    public void SetCohesionRadius(float value)
+    {
+        cohesionRadius = value;
+    }
+    public void SetSeparationRadius(float value)
+    {
+        separationRadius = value;
+    }
+    public void SetAlignmentRadius(float value)
+    {
+        alignmentRadius = value;
+    }
+    public void SetCohesionForce(float value)
+    {
+        cohesionForce = value;
+    }
+    public void SetSeparationForce(float value)
+    {
+        separationForce = value;
+    }
+    public void SetAlignmentForce(float value)
+    {
+        alignmentForce = value;
     }
 }
