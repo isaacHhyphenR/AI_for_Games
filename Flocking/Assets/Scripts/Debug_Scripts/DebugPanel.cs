@@ -12,4 +12,7 @@ public class DebugPanel : MonoBehaviour
     public Slider cohesionForceSlider;
     public Slider separationForceSlider;
     public Slider alignmentForceSlider;
+    public Slider beaconForceSlider;
+    public Slider beaconCohesionRadiusSlider;
+    public Slider beaconSeparationRadiusSlider;
 }

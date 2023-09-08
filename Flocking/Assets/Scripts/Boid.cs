@@ -19,9 +19,13 @@ public class Boid : MonoBehaviour
     [SerializeField] Vector3 screenBounds; //the XYZ at which the boids should wrap around
     [SerializeField] Renderer[] renders;
     [SerializeField] bool dynamicColor;
+    [SerializeField] float beaconForce;
 
     Vector3 velocity;
     Vector3 prevVelocity; //for alignment purposes
+
+    Vector3 beaconVector;
+
     private void Start()
     {
         velocity = transform.forward;
@@ -42,7 +46,7 @@ public class Boid : MonoBehaviour
     private void Move()
     {
         prevVelocity = velocity;
-        Vector3 force = Cohesion() * cohesionForce + Separation() * separationForce + Alignment() * alignmentForce;
+        Vector3 force = Cohesion() * cohesionForce + Separation() * separationForce + Alignment() * alignmentForce + BeaconForce() * beaconForce;
         velocity += force * Time.deltaTime * speed;
         velocity = Vector3.ClampMagnitude(velocity, speed);
         transform.LookAt(transform.position + velocity * Time.deltaTime, Vector3.up); //turn to face the correct direction
@@ -178,6 +182,23 @@ public class Boid : MonoBehaviour
         }
     }
 
+    public void AddBeaconVector(Vector3 newVector)
+    {
+        beaconVector += newVector;
+    }
+    public void AddBeaconVector(Vector3 newVector, float newForce)
+    {
+        beaconVector += newVector * newForce;
+    }
+
+    Vector3 BeaconForce()
+    {
+        beaconVector.Normalize();
+        Vector3 returnVector = beaconVector;
+        beaconVector = Vector3.zero;
+        return returnVector;
+    }
+
     public Vector3 GetBounds()
     {
         return screenBounds;
@@ -210,5 +231,9 @@ public class Boid : MonoBehaviour
     public void SetAlignmentForce(float value)
     {
         alignmentForce = value;
+    }
+    public void SetBeaconForce(float value)
+    {
+        beaconForce = value;
     }
 }

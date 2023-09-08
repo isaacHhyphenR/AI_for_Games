@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if(debugMode)
+        if (debugMode)
         {
             maxBoids = (int)debugPanel.maxBoidSlider.GetValue();
             boidArray = GameObject.FindGameObjectsWithTag("Boid");
@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour
                 DespawnBoid();
             }
             //sets variables
-            foreach(GameObject boid in boidArray)
+            foreach (GameObject boid in boidArray)
             {
                 boidScript = boid.GetComponent<Boid>();
                 boidScript.SetSpeed(debugPanel.speedSlider.GetValue());
@@ -46,6 +46,15 @@ public class GameManager : MonoBehaviour
                 boidScript.SetCohesionForce(debugPanel.cohesionForceSlider.GetValue());
                 boidScript.SetSeparationForce(debugPanel.separationForceSlider.GetValue());
                 boidScript.SetAlignmentForce(debugPanel.alignmentForceSlider.GetValue());
+                boidScript.SetBeaconForce(debugPanel.beaconForceSlider.GetValue());
+            }
+            //updates beacons
+            GameObject[] beaconArray = GameObject.FindGameObjectsWithTag("Beacon");
+            foreach (GameObject beacon in beaconArray)
+            {
+                Beacon beaconScript = beacon.GetComponent<Beacon>();
+                beaconScript.SetCohesionRadius(debugPanel.beaconCohesionRadiusSlider.GetValue());
+                beaconScript.SetSeparationRadius(debugPanel.beaconSeparationRadiusSlider.GetValue());
             }
         }
     }
@@ -64,5 +73,14 @@ public class GameManager : MonoBehaviour
     {
         int victim = Random.Range(0, boidArray.Length);
         Destroy(boidArray[victim]);
+    }
+    public void SetDebug(bool db)
+    {
+        debugMode = db;
+        debugPanel.gameObject.SetActive(debugMode);
+    }
+    public bool GetDebug()
+    {
+        return debugMode;
     }
 }
