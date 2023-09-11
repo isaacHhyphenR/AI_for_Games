@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class Boid : MonoBehaviour
 {
@@ -20,6 +17,8 @@ public class Boid : MonoBehaviour
     [SerializeField] Renderer[] renders;
     [SerializeField] bool dynamicColor;
     [SerializeField] float beaconForce;
+    [SerializeField] float boundingForce;
+    [SerializeField] float boundingRange;
 
     Vector3 velocity;
     Vector3 prevVelocity; //for alignment purposes
@@ -46,14 +45,14 @@ public class Boid : MonoBehaviour
     private void Move()
     {
         prevVelocity = velocity;
-        Vector3 force = Cohesion() * cohesionForce + Separation() * separationForce + Alignment() * alignmentForce + BeaconForce() * beaconForce;
+        Vector3 force = Cohesion() * cohesionForce + Separation() * separationForce + Alignment() * alignmentForce + BeaconForce() * beaconForce + Bounding() * boundingForce;
         velocity += force * Time.deltaTime * speed;
         velocity = Vector3.ClampMagnitude(velocity, speed);
         transform.LookAt(transform.position + velocity * Time.deltaTime, Vector3.up); //turn to face the correct direction
         transform.position += velocity * Time.deltaTime; //actually do the movement
 
         //Wraps around the screen
-        transform.position = ScreenWrap();
+        //transform.position = ScreenWrap();
     }
 
     private Vector3 ScreenWrap()
@@ -160,6 +159,72 @@ public class Boid : MonoBehaviour
         alignment /= alignmentSize;
         alignment.Normalize();
         return alignment * speed;
+    }
+
+    private Vector3 Bounding()
+    {
+        Vector3 bounding = Vector3.zero;
+        //left
+        if(transform.position.x > screenBounds.x - boundingRange)
+        {
+            Vector3 reboundForce = new Vector3(-1,0,0);
+            float distance = Mathf.Abs(screenBounds.x - transform.position.x) / boundingRange;
+            if (transform.position.x < screenBounds.x) //if still on the screen, use distance
+            {
+                reboundForce /= distance;
+            }
+            else //else just be really strong
+            {
+                reboundForce /= 0.000001f;
+            }
+            bounding += reboundForce;
+        }
+        //right
+        else if (transform.position.x < -screenBounds.x + boundingRange)
+        {
+            Vector3 reboundForce = new Vector3(1, 0, 0);
+            float distance = Mathf.Abs(-screenBounds.x - transform.position.x) / boundingRange;
+            if (transform.position.x > screenBounds.x) //if still on the screen, use distance
+            {
+                reboundForce /= distance;
+            }
+            else
+            {
+                reboundForce /= 0.000001f;
+            }
+            bounding += reboundForce;
+        }
+        //Bottom
+        if (transform.position.z > screenBounds.z - boundingRange)
+        {
+            Vector3 reboundForce = new Vector3(0, 0, -1);
+            float distance = Mathf.Abs(screenBounds.z - transform.position.z) / boundingRange;
+            if (transform.position.z < screenBounds.z) //if still on the screen, use distance
+            {
+                reboundForce /= distance;
+            }
+            else
+            {
+                reboundForce /= 0.000001f;
+            }
+            bounding += reboundForce;
+        }
+        //Top
+        else if (transform.position.z < -screenBounds.z + boundingRange)
+        {
+            Vector3 reboundForce = new Vector3(0, 0, 1);
+            float distance = Mathf.Abs(-screenBounds.z - transform.position.z) / boundingRange;
+            if (transform.position.z > screenBounds.z) //if still on the screen, use distance
+            {
+                reboundForce /= distance;
+            }
+            else
+            {
+                reboundForce /= 0.000001f;
+            }
+            bounding += reboundForce;
+        }
+        return bounding;
     }
     public Vector3 GetVelocity()
     {

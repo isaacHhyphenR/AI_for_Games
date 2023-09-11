@@ -53,20 +53,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7694043201947940552, guid: d81ece9e55f42f04e89b624f91d70bc2, type: 3}
-      propertyPath: beaconForce
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 7694043201947940552, guid: d81ece9e55f42f04e89b624f91d70bc2, type: 3}
       propertyPath: dynamicColor
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7694043201947940552, guid: d81ece9e55f42f04e89b624f91d70bc2, type: 3}
       propertyPath: screenBounds.x
-      value: 80
+      value: 78
       objectReference: {fileID: 0}
     - target: {fileID: 7694043201947940552, guid: d81ece9e55f42f04e89b624f91d70bc2, type: 3}
       propertyPath: screenBounds.z
-      value: 50
+      value: 42
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -129,11 +129,14 @@ MonoBehaviour:
   maxSeparationForce: 1
   alignmentForce: 1
   maxForce: 2
-  screenBounds: {x: 50, y: 50, z: 30}
+  screenBounds: {x: 42, y: 50, z: 25}
   renders:
   - {fileID: 6936155949567185700}
   - {fileID: 8493358458737185606}
   dynamicColor: 1
+  beaconForce: 5
+  boundingForce: 1
+  boundingRange: 5
 --- !u!1 &7964792142526491800
 GameObject:
   m_ObjectHideFlags: 0
