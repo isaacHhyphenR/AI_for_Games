@@ -2,13 +2,13 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
-/Flocking/[Ll]ibrary/
-/Flocking/[Tt]emp/
-/Flocking/[Oo]bj/
-/Flocking/[Bb]uild/
-/Flocking/[Bb]uilds/
-/Flocking/[Ll]ogs/
-/Flocking/[Uu]ser[Ss]ettings/
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
 /mobagen_Isaac
 /Awesome-GameDev-Resources-Isaac
 
