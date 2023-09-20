@@ -9,13 +9,22 @@ public class Cell : MonoBehaviour
     Cell[] neighbours = new Cell[8];
     [SerializeField] Renderer cellRenderer;
     int neighboursSet = 0;
-
+    public bool deactivated = false;
+    bool firstFrame = true;
     private void Start()
     {
         SetNeighbours();
         UpdateColor();
         GameManager.BeginTurn += CalculateState;
         GameManager.EndTurn += UpdateBuffer;
+    }
+    private void Update()
+    {
+        if(!firstFrame && neighbours.Length < 8)
+        {
+            SetNeighbours();
+        }
+        firstFrame = false;
     }
 
     void SetNeighbours() //adds all nearby cells to the neighbours array
@@ -24,7 +33,7 @@ public class Cell : MonoBehaviour
         foreach(Collider collider in colliders)
         {
             Cell neighbour = collider.gameObject.GetComponent<Cell>();
-            if (neighbour != null && neighbour != this)
+            if (neighbour != null && !neighbour.deactivated && neighbour != this)
             {
                 neighbours[neighboursSet] = neighbour;
                 neighboursSet++;
@@ -97,6 +106,10 @@ public class Cell : MonoBehaviour
     {
         return alive;
     }
+    public void SetAlive(bool live)
+    {
+        alive = live;
+    }
 
     private void OnMouseDown()
     {
@@ -106,6 +119,11 @@ public class Cell : MonoBehaviour
     }
 
     private void OnDisable()
+    {
+        GameManager.BeginTurn -= CalculateState;
+        GameManager.EndTurn -= UpdateBuffer;
+    }
+    private void OnDestroy()
     {
         GameManager.BeginTurn -= CalculateState;
         GameManager.EndTurn -= UpdateBuffer;
