@@ -8,6 +8,7 @@ public class Cell : MonoBehaviour
     bool tempState = false;
     Cell[] neighbours = new Cell[8];
     [SerializeField] Renderer cellRenderer;
+    int neighboursSet = 0;
 
     private void Start()
     {
@@ -19,7 +20,6 @@ public class Cell : MonoBehaviour
 
     void SetNeighbours() //adds all nearby cells to the neighbours array
     {
-        int neighboursSet = 0;
         Collider[] colliders = Physics.OverlapSphere(transform.position, transform.localScale.x);
         foreach(Collider collider in colliders)
         {
@@ -37,7 +37,6 @@ public class Cell : MonoBehaviour
         int livingNeighbours = 0;
         if(neighbours.Length > 0)
         {
-
             foreach (Cell neighbour in neighbours)
             {
                 if (neighbour != null && neighbour.GetAlive())
@@ -68,7 +67,6 @@ public class Cell : MonoBehaviour
 
     void UpdateColor()
     {
-        cellRenderer = GetComponent<Renderer>(); //says the component was destroyed otherwise, no clue why
         if (alive)
         {
             cellRenderer.material.color = GameManager.GetAliveColor();
@@ -76,6 +74,23 @@ public class Cell : MonoBehaviour
         else
         {
             cellRenderer.material.color = GameManager.GetDeadColor();
+        }
+    }
+    public void AddNeighbour(Cell newNeighbour) //to add neighbours from the other edge
+    {
+        bool contains = false;
+        foreach(Cell neighbour in neighbours)
+        {
+            if(neighbour == newNeighbour)
+            {
+                contains = true;
+                break;
+            }
+        }
+        if(!contains)
+        {
+            neighbours[neighboursSet] = newNeighbour;
+            neighboursSet++;
         }
     }
     public bool GetAlive()
@@ -88,5 +103,11 @@ public class Cell : MonoBehaviour
         alive = !alive;
         tempState = alive;
         UpdateColor();
+    }
+
+    private void OnDisable()
+    {
+        GameManager.BeginTurn -= CalculateState;
+        GameManager.EndTurn -= UpdateBuffer;
     }
 }
