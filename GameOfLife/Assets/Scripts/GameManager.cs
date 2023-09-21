@@ -36,6 +36,10 @@ public class GameManager : MonoBehaviour
     }
     private void Update()
     {
+        if(Input.GetKey(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
         if(debug)
         {
             turnLength = 1/ debugPanel.gameSpeedSlider.GetValue();
