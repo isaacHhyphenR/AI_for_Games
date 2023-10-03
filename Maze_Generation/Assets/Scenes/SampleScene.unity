@@ -371,7 +371,7 @@ MonoBehaviour:
   width: 5
   height: 5
   wallPrefab: {fileID: 378989005970790001, guid: b36ee8fc7d745e146a1b4f2d5c818b4c, type: 3}
-  tickSpeed: 0.25
+  tickSpeed: 0.1
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0

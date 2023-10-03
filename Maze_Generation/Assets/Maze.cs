@@ -22,10 +22,33 @@ public class Maze : MonoBehaviour
 
     List<Node> stack = new List<Node>();
     Node head;
-    private void Start()
+
+    bool run; //whether it should currently run
+
+    private void Update()
+    {
+        tickTimer -= Time.deltaTime;
+
+        //determines whether the user wants an iteration to occur
+        if(Input.GetKey(KeyCode.Space))
+        {
+            run = true;
+        }
+        //runs an iteration if conditions are correct
+        if(run && tickTimer <= 0)
+        {
+            head.DeActivate(); //previous head no longer red
+            tickTimer = tickSpeed;
+            if (stack.Count > 0)
+            {
+                MazeIteration();
+            }
+        }
+    }
+
+    void GenerateMaze()
     {
         wallSize = wallPrefab.transform.localScale.x;
-
         //generates the left wall
         for (int y = 0; y < height; y++)
         {
@@ -41,20 +64,9 @@ public class Maze : MonoBehaviour
             GameObject topWall = Instantiate(wallPrefab, transform.position, transform.rotation) as GameObject;
             topWall.transform.position = new Vector3(x * wallSize, 0, wallSize / 2);
             topWall.name = "Top" + x + "," + 0;
-            //generates walls for this column
+            //generates the nodes for this column
             for (int y = 0; y < height; y++)
             {
-                /*
-                GameObject rightWall = Instantiate(wallPrefab, transform.position,transform.rotation) as GameObject;
-                rightWall.transform.position = new Vector3((x+1) * wallSize, 0, -y * wallSize);
-                rightWall.transform.Rotate(0, 90, 0);
-                rightWall.name = "Right" + x + "," + y;
-                GameObject bottomWall = Instantiate(wallPrefab, transform.position, transform.rotation) as GameObject;
-                bottomWall.transform.position = new Vector3(x * wallSize + wallSize / 2, 0, -y * wallSize - wallSize / 2);
-                bottomWall.name = "Bottom" + x + "," + y;
-
-                GameObject[] walls = {rightWall, bottomWall};
-                */
                 GameObject newNodeObj = Instantiate(nodePrefab, new Vector3(x * wallSize, 0, -y * wallSize), transform.rotation);
                 Node newNode = newNodeObj.GetComponent<Node>(); //have to flip x & y some reason
                 newNode.x = x;
@@ -67,16 +79,7 @@ public class Maze : MonoBehaviour
 
         //inits the stack
         stack.Add(GetNodeAt(0, 0));
-    }
-
-    private void Update()
-    {
-        tickTimer -= Time.deltaTime;
-        if(stack.Count > 0 && Input.GetKey(KeyCode.Space) && tickTimer <= 0)
-        {
-            MazeIteration();
-            tickTimer = tickSpeed;
-        }
+        head = stack.Last();
     }
 
     ///Conducts 1 round of maze work
@@ -85,17 +88,11 @@ public class Maze : MonoBehaviour
         head = stack.Last();
         int currentX = head.x;
         int currentY = head.y;
-        //getting a node from the list always makes a copy, so gotta do this
         head.visited = true;
+        head.Activate(); //head shows red
 
         //Gets the unvisited neighbors
         List<Vector2> unvisitedNeighbors = GetUnvisitedNeighborsOf(currentX, currentY);
-
-        string message = "Head: " + head.x + "," + head.y + "\n";
-        foreach (Vector2 v in unvisitedNeighbors)
-            message += v.x + "," + v.y + "," + GetNodeAt((int)v.x, (int)v.y).visited + " ";
-        Debug.Log(message);
-
 
         //if the current node has no valid neighbours, revert to previous current node
         if (unvisitedNeighbors.Count < 1)
