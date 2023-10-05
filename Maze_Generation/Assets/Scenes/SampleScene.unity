@@ -622,6 +622,10 @@ PrefabInstance:
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2370229037777567029, guid: 8cfdd7fba8910194db6b5a4986b05360, type: 3}
+      propertyPath: extremeValues.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2370229037777567029, guid: 8cfdd7fba8910194db6b5a4986b05360, type: 3}
       propertyPath: extremeValues.y
       value: 15
       objectReference: {fileID: 0}

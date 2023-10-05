@@ -15,6 +15,7 @@ public class Maze : MonoBehaviour
     int height;
     float wallSize;
     List<Node> nodes = new List<Node>();
+    List<GameObject> freeWalls = new List<GameObject>(); //all the walls not part of a node
     [SerializeField] GameObject wallPrefab;
     [Tooltip("How many seconds pass between each iteration")]
     [SerializeField] float tickSpeed;
@@ -58,6 +59,12 @@ public class Maze : MonoBehaviour
         }
         nodes.Clear();
         stack.Clear();
+        //get rid of bounding walls
+        for (int i = freeWalls.Count - 1; i >= 0; i--)
+        {
+            Destroy(freeWalls[i]);
+        }
+
     }
 
     public void GenerateMaze()
@@ -73,6 +80,7 @@ public class Maze : MonoBehaviour
             rightWall.transform.position = new Vector3(-0.5f * wallSize, 0, -y * wallSize) + transform.position;
             rightWall.transform.Rotate(0, 90, 0);
             rightWall.name = "Left" + 0 + "," + y;
+            freeWalls.Add(rightWall);
         }
         //generates walls and nodes
         for (int x = 0; x < width; x++) //The vector is 1d
@@ -81,6 +89,7 @@ public class Maze : MonoBehaviour
             GameObject topWall = Instantiate(wallPrefab, transform.position, transform.rotation) as GameObject;
             topWall.transform.position = new Vector3(x * wallSize, 0, wallSize / 2) + transform.position;
             topWall.name = "Top" + x + "," + 0;
+            freeWalls.Add(topWall);
             //generates the nodes for this column
             for (int y = 0; y < height; y++)
             {
@@ -153,7 +162,7 @@ public class Maze : MonoBehaviour
     ///returns the node at the given coordinate
     Node GetNodeAt(int x, int y)
     {
-        int index = width * x + y; //converts 2d coordinates into a 1d index
+        int index = height * x + y; //converts 2d coordinates into a 1d index
         if(index < nodes.Count)
         {
             return nodes[index];
