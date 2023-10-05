@@ -11,8 +11,8 @@ enum Direction
 public class Maze : MonoBehaviour
 {
     [SerializeField] GameObject nodePrefab;
-    [SerializeField] int width;
-    [SerializeField] int height;
+    int width;
+    int height;
     float wallSize;
     List<Node> nodes = new List<Node>();
     [SerializeField] GameObject wallPrefab;
@@ -23,11 +23,15 @@ public class Maze : MonoBehaviour
     List<Node> stack = new List<Node>();
     Node head;
 
-    bool run; //whether it should currently run
+    bool run = true; //whether it should currently run
+
+    [SerializeField] Slider speedSlider;
+    [SerializeField] Slider rowsSlider;
+    [SerializeField] Slider columnsSlider;
 
     private void Update()
     {
-        tickTimer -= Time.deltaTime;
+        tickTimer -= Time.deltaTime * speedSlider.GetValue();
 
         //determines whether the user wants an iteration to occur
         if(Input.GetKey(KeyCode.Space))
@@ -35,7 +39,7 @@ public class Maze : MonoBehaviour
             run = true;
         }
         //runs an iteration if conditions are correct
-        if(run && tickTimer <= 0)
+        if(run && tickTimer < 0 && head != null)
         {
             head.DeActivate(); //previous head no longer red
             tickTimer = tickSpeed;
@@ -45,15 +49,28 @@ public class Maze : MonoBehaviour
             }
         }
     }
-
-    void GenerateMaze()
+    //deletes exiting maze
+    public void ClearMaze()
     {
+        for(int i = nodes.Count - 1; i  >= 0; i--)
+        {
+            Destroy(nodes[i].gameObject);
+        }
+        nodes.Clear();
+        stack.Clear();
+    }
+
+    public void GenerateMaze()
+    {
+        ClearMaze();
+        height = (int)rowsSlider.GetValue();
+        width = (int)columnsSlider.GetValue();
         wallSize = wallPrefab.transform.localScale.x;
         //generates the left wall
         for (int y = 0; y < height; y++)
         {
             GameObject rightWall = Instantiate(wallPrefab, transform.position, transform.rotation) as GameObject;
-            rightWall.transform.position = new Vector3(-0.5f * wallSize, 0, -y * wallSize);
+            rightWall.transform.position = new Vector3(-0.5f * wallSize, 0, -y * wallSize) + transform.position;
             rightWall.transform.Rotate(0, 90, 0);
             rightWall.name = "Left" + 0 + "," + y;
         }
@@ -62,18 +79,17 @@ public class Maze : MonoBehaviour
         {
             //generates top wall
             GameObject topWall = Instantiate(wallPrefab, transform.position, transform.rotation) as GameObject;
-            topWall.transform.position = new Vector3(x * wallSize, 0, wallSize / 2);
+            topWall.transform.position = new Vector3(x * wallSize, 0, wallSize / 2) + transform.position;
             topWall.name = "Top" + x + "," + 0;
             //generates the nodes for this column
             for (int y = 0; y < height; y++)
             {
-                GameObject newNodeObj = Instantiate(nodePrefab, new Vector3(x * wallSize, 0, -y * wallSize), transform.rotation);
+                GameObject newNodeObj = Instantiate(nodePrefab, new Vector3(x * wallSize, 0, -y * wallSize) + transform.position, transform.rotation);
                 Node newNode = newNodeObj.GetComponent<Node>(); //have to flip x & y some reason
                 newNode.x = x;
                 newNode.y = y;
                 nodes.Add(newNode);
             }
-
         }
 
 

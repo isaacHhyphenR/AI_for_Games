@@ -13,6 +13,7 @@ public class Slider : MonoBehaviour
     [SerializeField] TMP_Text minText; //displays the minimum value
     [SerializeField] TMP_Text maxText; //displays the maximum value
     [SerializeField] TMP_Text currentText; //displays the current value
+    [SerializeField] bool canFloat = false; // true = can have decimals, false = needs int
 
     private void Start()
     {
@@ -42,7 +43,14 @@ public class Slider : MonoBehaviour
 
     void UpdateValue()
     {
-        sliderValue = (int)sliderValue;
+        if(!canFloat)
+        {
+            sliderValue = (int)sliderValue;
+        }
+        else
+        {
+            sliderValue = (float)System.Math.Round(sliderValue, 1);
+        }
         currentText.text = "" + sliderValue;
     }
 

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SliderButton : MonoBehaviour
@@ -10,9 +8,9 @@ public class SliderButton : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(followMouse)
+        if (followMouse)
         {
-            if(!Input.GetMouseButton(0))//stop following mouse on mouse release
+            if (!Input.GetMouseButton(0))//stop following mouse on mouse release
             {
                 followMouse = false;
             }
