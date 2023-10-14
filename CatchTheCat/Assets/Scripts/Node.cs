@@ -19,19 +19,49 @@ public class Node : MonoBehaviour
     [SerializeField] Color blockedColor;
     [SerializeField] bool blocked = false;
     public Vector2 coordinates = Vector2.zero;
+    [Tooltip("Points to the node that led to this node in the current pathfinding session.")]
+    public Vector2 previous = Vector2.zero;
+    public bool visited = false;
 
+    bool isEdge = false;
     private void Start()
     {
         for (int i = 0; i < neighbours.Length; i++)
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.GetChild(i).position, 0.1f);
-            neighbours[i] = hitColliders[0].GetComponent<Node>();
+            Collider[] hitColliders = Physics.OverlapSphere(transform.GetChild(i).position, 0.15f);
+            foreach(Collider col in hitColliders)
+            {
+                Node hitNode = col.GetComponent<Node>();
+                if(hitNode != null)
+                {
+                    neighbours[i] = hitNode;
+                    break;
+                }
+            }
+            if (neighbours[i] == null)
+            {
+                isEdge = true;
+                Block();
+            }
         }
-        if(blocked)
+        for (int i = 0; i < neighbours.Length; i++)
+        {
+            if (neighbours[i] == null)
+            {
+                Destroy(transform.GetChild(i).gameObject);
+            }
+        }
+        if (blocked)
         {
             Block();
         }
     }
+
+    public bool GetIsEdge()
+    {
+        return isEdge;
+    }
+
 
     public void Block()
     {
@@ -57,12 +87,26 @@ public class Node : MonoBehaviour
         List<Node> unblocked = new List<Node>();
         foreach(Node neighbour in neighbours)
         {
-            if(neighbour != null && !neighbour.GetBlocked())
+            if(neighbour != null && !neighbour.GetBlocked() && !neighbour.visited)
             {
                 unblocked.Add(neighbour);
             }
         }
         return unblocked;
+    }
+
+    void ResetTurn()
+    {
+        visited = false;
+    }
+
+    private void OnEnable()
+    {
+        GameManager.ResetTurn += ResetTurn;
+    }
+    private void OnDisable()
+    {
+        GameManager.ResetTurn -= ResetTurn;
     }
 }
 
