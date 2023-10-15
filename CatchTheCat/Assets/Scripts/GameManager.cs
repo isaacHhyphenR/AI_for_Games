@@ -54,57 +54,48 @@ public class GameManager : MonoBehaviour
         if(timer > 0.5f)
         {
             timer = 0;
-            //List<Node> path = FindPathToEdge();
-            //path[0].Block();
-            //catPos = path[0].coordinates;
-            /* This code draws a random path across the board
-                nodes[LinearizeCoordinates(head)].Block();
-                //head moves to a random neighbour of the current head
-                List<Node> neighbours = nodes[LinearizeCoordinates(head)].GetUnblockedNeighbours();
-                int rand = Random.Range(0, neighbours.Count);
-                head = neighbours[rand].coordinates;
-            */
+            List<Node> path = FindPathToEdge();
             ResetTurn?.Invoke();
         }
     }
 
-    /*
+    
     List<Node> FindPathToEdge()
     {
         //All the nodes you've visited so far
-        List<Vector2> queue = new List<Vector2>();
-        queue.Add(catPos);
-        while(queue.Count > 0)
+        List<Node> queue = new List<Node>();
+        Node head = GetNodeAt(catPos);
+        queue.Add(head);
+        do
         {
-            Node head = GetNodeAt(queue[0]);
+            head = queue[0];
             head.visited = true;
-
-        }
-        /*
-        while (!foundEdge && )
-        {
-            nodes[LinearizeCoordinates(head)].visited = true;
-            List<Node> neighbours = nodes[LinearizeCoordinates(head)].GetUnblockedNeighbours();
-            //If you've found the edge, congrats!
-            if( neighbours.Count < (int)Directions.NUM_DIRECTIONS)
+            if (head.GetIsEdge())
             {
-                foundEdge = true;
+                break;
             }
-            //if you haven't found the edge, add the new neighbours to the path
             else
             {
-                foreach( Node neighbour in neighbours)
+                List<Node> neighbors = head.GetUnblockedNeighbours();
+                foreach (Node neighbour in neighbors)
                 {
-                    if(!visited.Contains(neighbour))
-                    {
-                        visited.Add(neighbour);
-                        neighbour.previous = head;
-                    }
+                    queue.Add(neighbour);
+                    neighbour.previous = head.coordinates;
                 }
-                headIndex++;
+                queue.Remove(head);
             }
+
+        } while (queue.Count > 0);
+        //Retrace your steps to find the path
+        List<Node> path = new List<Node>();
+        while(head != GetNodeAt(catPos))
+        {
+            path.Add(head);
+            head = GetNodeAt(head.previous);
         }
-        return visited;
+
+
+        return path;
     }
-    */
+    
 }

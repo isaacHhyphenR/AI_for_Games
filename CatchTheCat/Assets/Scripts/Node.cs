@@ -41,7 +41,6 @@ public class Node : MonoBehaviour
             if (neighbours[i] == null)
             {
                 isEdge = true;
-                Block();
             }
         }
         for (int i = 0; i < neighbours.Length; i++)
@@ -90,6 +89,18 @@ public class Node : MonoBehaviour
             if(neighbour != null && !neighbour.GetBlocked() && !neighbour.visited)
             {
                 unblocked.Add(neighbour);
+            }
+        }
+        return unblocked;
+    }
+    public List<Vector2> GetUnblockedNeighbours(bool yes = true)
+    {
+        List<Vector2> unblocked = new List<Vector2>();
+        foreach (Node neighbour in neighbours)
+        {
+            if (neighbour != null && !neighbour.GetBlocked() && !neighbour.visited)
+            {
+                unblocked.Add(neighbour.coordinates);
             }
         }
         return unblocked;
