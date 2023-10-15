@@ -24,6 +24,8 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] TurnMarker turnMarker;
 
+    public static bool paused = false;
+
     private void Awake()
     {
         for(int r = 0; r < sideSize; r++)
@@ -63,10 +65,13 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        timer += Time.deltaTime;
-        if (timer > turnTime)
+        if(!paused)
         {
-            TakeTurn();
+            timer += Time.deltaTime;
+            if (timer > turnTime)
+            {
+                TakeTurn();
+            }
         }
     }
 
