@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public enum Directions
 {
@@ -23,10 +24,12 @@ public class Node : MonoBehaviour
     public Vector2 coordinates = Vector2.zero;
     [Tooltip("Points to the node that led to this node in the current pathfinding session.")]
     public Vector2 previous = Vector2.zero;
-    public bool visited = false;
+    bool visited = false;
 
     bool isEdge = false;
     bool isCat = false;
+
+    [SerializeField] TMP_Text visitedUI;
 
     private void Awake()
     {
@@ -135,6 +138,23 @@ public class Node : MonoBehaviour
     void ResetTurn()
     {
         visited = false;
+        visitedUI.text = "";
+    }
+
+    public void Visit()
+    {
+        visited = true;
+        visitedUI.text = "V";
+    }
+
+    public void SetPath(int num)
+    {
+        visitedUI.text = "" + num;
+    }
+
+    public bool GetIsVisited()
+    {
+        return visited;
     }
 
     private void OnEnable()

@@ -108,6 +108,7 @@ public class GameManager : MonoBehaviour
 
     List<Node> FindPathToEdge()
     {
+        ResetTurn?.Invoke();
         //All the nodes you've visited so far
         List<Node> queue = new List<Node>();
         Node head = catPos;
@@ -115,7 +116,7 @@ public class GameManager : MonoBehaviour
         do
         {
             head = queue[0];
-            head.visited = true;
+            head.Visit();
             if (head.GetIsEdge())
             {
                 break;
@@ -125,8 +126,11 @@ public class GameManager : MonoBehaviour
                 List<Node> neighbors = head.GetUnblockedNeighbours();
                 foreach (Node neighbour in neighbors)
                 {
-                    queue.Add(neighbour);
-                    neighbour.previous = head.coordinates;
+                    if(!queue.Contains(neighbour))
+                    {
+                        queue.Add(neighbour);
+                        neighbour.previous = head.coordinates;
+                    }
                 }
                 queue.Remove(head);
             }
@@ -136,10 +140,10 @@ public class GameManager : MonoBehaviour
         List<Node> path = new List<Node>();
         while(head != catPos)
         {
+            head.SetPath(path.Count);
             path.Add(head);
             head = GetNodeAt(head.previous);
         }
-        ResetTurn?.Invoke();
 
         return path;
     }
