@@ -22,6 +22,8 @@ public class GameManager : MonoBehaviour
 
     public static event Action ResetTurn;
 
+    [SerializeField] TurnMarker turnMarker;
+
     private void Awake()
     {
         for(int r = 0; r < sideSize; r++)
@@ -54,6 +56,9 @@ public class GameManager : MonoBehaviour
             }
             nodes[randPos].Block();
         }
+
+        //
+        turnMarker.SetTurn(catTurn);
     }
 
     private void Update()
@@ -61,33 +66,41 @@ public class GameManager : MonoBehaviour
         timer += Time.deltaTime;
         if (timer > turnTime)
         {
-            timer = 0;
-            List<Node> path = FindPathToEdge();
+            TakeTurn();
+        }
+    }
 
-            if (catTurn)
+
+    void TakeTurn()
+    {
+        timer = 0;
+
+        List<Node> path = FindPathToEdge();
+
+        if (catTurn)
+        {
+            //If you're already at the edge, win
+            if (catPos.GetIsEdge())
             {
-                //If you're already at the edge, win
-                if (catPos.GetIsEdge())
-                {
-                    SceneManager.LoadScene("CatWin");
-                }
-                //If you're trapped, lose
-                else if (path.Count == 0)
-                {
-                    SceneManager.LoadScene("CatLose");
-                }
-                else
-                {
-                    catPos = catAgent.TakeTurn(path);
-                }
+                SceneManager.LoadScene("CatWin");
+            }
+            //If you're trapped, lose
+            else if (path.Count == 0)
+            {
+                SceneManager.LoadScene("CatLose");
             }
             else
             {
-                catcherAgent.TakeTurn(path);
+                catPos = catAgent.TakeTurn(path);
             }
-            //switch turn
-            catTurn = !catTurn;
         }
+        else
+        {
+            catcherAgent.TakeTurn(path);
+        }
+        //switch turn
+        catTurn = !catTurn;
+        turnMarker.SetTurn(catTurn);
     }
 
     int LinearizeCoordinates(Vector2 coordinates)
