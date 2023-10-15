@@ -1,16 +1,24 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using UnityEngine.SceneManagement;
+
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] Cat catAgent;
+    [SerializeField] Catcher catcherAgent;
+
     [SerializeField] GameObject nodePrefab;
     [SerializeField] int sideSize;
-    [SerializeField] Vector2 hexSize; 
+    [SerializeField] Vector2 hexSize;
+    [SerializeField] int startingBlockers;
 
     List<Node> nodes = new List<Node>();
 
-    Vector2 catPos = Vector2.zero;
+    Node catPos;
     float timer = 0;
+    [SerializeField] float turnTime;
+    bool catTurn = false;
 
     public static event Action ResetTurn;
 
@@ -34,7 +42,52 @@ public class GameManager : MonoBehaviour
             }
         }
         //sets the initial head at the center
-        catPos = new Vector2(sideSize/2,sideSize/2);
+        catPos = GetNodeAt(new Vector2(sideSize/2,sideSize/2));
+        catAgent.InitAgent(catPos);
+        //random starting blockers
+        for (int i = 0; i < startingBlockers; i++)
+        {
+            int randPos = UnityEngine.Random.Range(0, nodes.Count);
+            while (randPos == LinearizeCoordinates(catPos.coordinates) || nodes[randPos].GetBlocked())
+            {
+                randPos = UnityEngine.Random.Range(0, nodes.Count);
+            }
+            nodes[randPos].Block();
+        }
+    }
+
+    private void Update()
+    {
+        timer += Time.deltaTime;
+        if (timer > turnTime)
+        {
+            timer = 0;
+            List<Node> path = FindPathToEdge();
+
+            if (catTurn)
+            {
+                //If you're already at the edge, win
+                if (catPos.GetIsEdge())
+                {
+                    SceneManager.LoadScene("CatWin");
+                }
+                //If you're trapped, lose
+                else if (path.Count == 0)
+                {
+                    SceneManager.LoadScene("CatLose");
+                }
+                else
+                {
+                    catPos = catAgent.TakeTurn(path);
+                }
+            }
+            else
+            {
+                catcherAgent.TakeTurn(path);
+            }
+            //switch turn
+            catTurn = !catTurn;
+        }
     }
 
     int LinearizeCoordinates(Vector2 coordinates)
@@ -43,28 +96,21 @@ public class GameManager : MonoBehaviour
         return index;
     }
 
-    Node GetNodeAt(Vector2 coordinates)
+    public Node GetNodeAt(Vector2 coordinates)
     {
         return nodes[LinearizeCoordinates(coordinates)];
     }
-
-    private void Update()
+    public Node GetNodeAt(int index)
     {
-        timer += Time.deltaTime;
-        if(timer > 0.5f)
-        {
-            timer = 0;
-            List<Node> path = FindPathToEdge();
-            ResetTurn?.Invoke();
-        }
+        return nodes[index];
     }
 
-    
+
     List<Node> FindPathToEdge()
     {
         //All the nodes you've visited so far
         List<Node> queue = new List<Node>();
-        Node head = GetNodeAt(catPos);
+        Node head = catPos;
         queue.Add(head);
         do
         {
@@ -88,14 +134,19 @@ public class GameManager : MonoBehaviour
         } while (queue.Count > 0);
         //Retrace your steps to find the path
         List<Node> path = new List<Node>();
-        while(head != GetNodeAt(catPos))
+        while(head != catPos)
         {
             path.Add(head);
             head = GetNodeAt(head.previous);
         }
-
+        ResetTurn?.Invoke();
 
         return path;
     }
     
+
+    public int GetNumNodes()
+    {
+        return nodes.Count;
+    }
 }

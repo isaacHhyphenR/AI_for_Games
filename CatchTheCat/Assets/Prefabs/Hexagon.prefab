@@ -935,7 +935,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   render: {fileID: 7308231853440961149}
   blockedColor: {r: 0.7735849, g: 0.24777748, b: 0.1707725, a: 1}
+  catColor: {r: 0, g: 0.17128181, b: 1, a: 1}
   blocked: 0
+  coordinates: {x: 0, y: 0}
+  previous: {x: 0, y: 0}
+  visited: 0
 --- !u!1 &7569392844928713099
 GameObject:
   m_ObjectHideFlags: 0

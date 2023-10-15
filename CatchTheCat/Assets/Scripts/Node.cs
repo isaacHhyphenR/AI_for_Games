@@ -17,6 +17,8 @@ public class Node : MonoBehaviour
     Node[] neighbours = new Node[(int)Directions.NUM_DIRECTIONS];
     [SerializeField] Renderer render;
     [SerializeField] Color blockedColor;
+    [SerializeField] Color catColor;
+    Color defaultColor;
     [SerializeField] bool blocked = false;
     public Vector2 coordinates = Vector2.zero;
     [Tooltip("Points to the node that led to this node in the current pathfinding session.")]
@@ -24,6 +26,13 @@ public class Node : MonoBehaviour
     public bool visited = false;
 
     bool isEdge = false;
+    bool isCat = false;
+
+    private void Awake()
+    {
+        defaultColor = render.material.color;
+    }
+
     private void Start()
     {
         for (int i = 0; i < neighbours.Length; i++)
@@ -66,6 +75,23 @@ public class Node : MonoBehaviour
     {
         render.material.color = blockedColor;
         blocked = true;
+    }
+    public void SetCat(bool cat)
+    {
+        isCat = cat;
+        if(cat)
+        {
+            render.material.color = catColor;
+        }
+        else
+        {
+            render.material.color = defaultColor;
+        }
+    }
+
+    public bool GetIsCat()
+    {
+        return isCat;
     }
     public bool GetBlocked()
     {
