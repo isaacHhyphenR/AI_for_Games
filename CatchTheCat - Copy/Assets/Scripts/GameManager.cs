@@ -107,6 +107,23 @@ public class GameManager : MonoBehaviour
         catTurn = !catTurn;
         turnMarker.SetTurn(catTurn);
     }
+
+    int LinearizeCoordinates(Vector2 coordinates)
+    {
+        int index = (int)coordinates.y * sideSize + (int)coordinates.x;
+        return index;
+    }
+
+    public Node GetNodeAt(Vector2 coordinates)
+    {
+        return nodes[LinearizeCoordinates(coordinates)];
+    }
+    public Node GetNodeAt(int index)
+    {
+        return nodes[index];
+    }
+
+
     List<Node> FindPathToEdge()
     {
         ResetTurn?.Invoke();
@@ -127,7 +144,7 @@ public class GameManager : MonoBehaviour
                 List<Node> neighbors = head.GetUnblockedNeighbours();
                 foreach (Node neighbour in neighbors)
                 {
-                    if (!queue.Contains(neighbour))
+                    if(!queue.Contains(neighbour))
                     {
                         queue.Add(neighbour);
                         neighbour.previous = head.coordinates;
@@ -139,7 +156,7 @@ public class GameManager : MonoBehaviour
         } while (queue.Count > 0);
         //Retrace your steps to find the path
         List<Node> path = new List<Node>();
-        while (head != catPos)
+        while(head != catPos)
         {
             head.SetPath(path.Count);
             path.Add(head);
@@ -148,21 +165,7 @@ public class GameManager : MonoBehaviour
 
         return path;
     }
-
-    int LinearizeCoordinates(Vector2 coordinates)
-    {
-        int index = (int)coordinates.y * sideSize + (int)coordinates.x;
-        return index;
-    }
-
-    public Node GetNodeAt(Vector2 coordinates)
-    {
-        return nodes[LinearizeCoordinates(coordinates)];
-    }
-    public Node GetNodeAt(int index)
-    {
-        return nodes[index];
-    }
+    
 
     public int GetNumNodes()
     {
