@@ -95,7 +95,6 @@ public class Cell : MonoBehaviour
     {
         line.enabled = true;
         line.SetPositions(new Vector3[2] { position, destination });
-        sector.SetHasLines(true);
     }
     public void ClearLine()
     {

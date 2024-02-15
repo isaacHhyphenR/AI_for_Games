@@ -11,7 +11,6 @@ public struct Sector
     float cellSize;
     int width;
     public Vector2 sectorID;
-    public bool hasLines;
     public Sector(int sectorWidth, GameObject cell, Color color, Vector3 position, Vector2 ID)
     {
         cells = new Cell[sectorWidth, sectorWidth];
@@ -21,7 +20,6 @@ public struct Sector
         sectorPosition = position;
         width = sectorWidth;
         sectorID = ID;
-        hasLines = false;
         GenerateCells();
     }
 
@@ -46,15 +44,10 @@ public struct Sector
 
     public void ClearLines()
     {
-        hasLines = false;
         foreach (Cell cell in cells)
         {
             cell.ClearLine();
         }
-    }
-    public void SetHasLines(bool line)
-    {
-        hasLines = line; ;
     }
 }
 
@@ -254,7 +247,9 @@ public class GridManager : MonoBehaviour
         return returnColor;
     }
 
-    //Draws a path
+    /// <summary>
+    /// Finds a path between origin & destination
+    /// </summary>
     public void Pathfind()
     {
         bool foundPath = false;
@@ -264,10 +259,7 @@ public class GridManager : MonoBehaviour
             //Clears all lines currently drawn on the board
             foreach (Sector sector in sectors)
             {
-                //if (sector.hasLines) //I want this for optimisation but it always results false. I think the Cell.sector variable not setting properly
-                {
-                    sector.ClearLines();
-                }
+                sector.ClearLines();
             }
 
             List<Cell> openList = new List<Cell>();
@@ -286,14 +278,13 @@ public class GridManager : MonoBehaviour
                         head = cell;
                     }
                 }
-                //Removes the head from the open list & searches it's successors
+                //Removes the head from the open list & searches its successors
                 openList.Remove(head);
-                //head.SetColor(new Color(0, 0, 0));
                 closedList.Add(head);
                 foreach(Cell cell in head.neighbours)
                 {
                     //Cannot cross diagonals if the game rule is false
-                    if(diagonal || head.CheckStraighAlignment(cell))
+                    if(cell.GetPassable() && (diagonal || head.CheckStraighAlignment(cell)))
                     {
                         //If it's the goal, congrats!
                         if (cell == destination)
@@ -303,7 +294,7 @@ public class GridManager : MonoBehaviour
                             break;
                         }
                         //If it's not on the closed list, move on to open list
-                        else if (cell.GetPassable() && !closedList.Contains(cell))
+                        else if (!closedList.Contains(cell))
                         {
                             float newCellCost = head.costSoFar + cell.CostToMove(head.position);
                             //If it's not on the open list, add it
