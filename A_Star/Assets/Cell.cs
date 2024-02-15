@@ -6,23 +6,28 @@ public class Cell : MonoBehaviour
     [SerializeField] Renderer render;
     [SerializeField] LineRenderer line;
     [SerializeField] Vector3 mountainScale;
+    [SerializeField] float swampMultiplier;
     Vector3 normalScale;
     [HideInInspector] public Sector sector;
     [HideInInspector] public Vector3 position;
-
-    public List<Cell> neighbours = new List<Cell>();
-
+    Color normalColor;
+    Color swampColor;
+    bool swamp = false;
     bool passable = true;
 
+    [HideInInspector] public List<Cell> neighbours = new List<Cell>();
+
     //A* data
-    public float heuristic = -1;
-    public float costSoFar = 0;
-    public float expectedCost = 0;
-    public Cell parent = null;
+    [HideInInspector] public float heuristic = -1;
+    [HideInInspector] public float costSoFar = 0;
+    [HideInInspector] public float expectedCost = 0;
+    [HideInInspector] public Cell parent = null;
     private void Start()
     {
         position = line.transform.position;
         normalScale = transform.localScale;
+        normalColor = render.material.color;
+        swampColor = render.material.color * 0.5f;
     }
     public void ResetPathfinding()
     {
@@ -31,18 +36,39 @@ public class Cell : MonoBehaviour
         expectedCost = 0;
         parent = null;
     }
-
-    public void CalculateHeuristic(Vector3 destination)
+    /// <summary>
+    /// Calculates & returns the estimated cost from this cell to the destination
+    /// </summary>
+    /// <param name="destination"></param>
+    public float CalculateHeuristic(Vector3 destination)
     {
-        heuristic = Mathf.Abs((destination - position).magnitude);
-    }
-    public float GetHeuristic()
-    {
+        if(GridManager.heuristic == Heuristic.MANHATTAN)
+        {
+            float xDist = Mathf.Abs(destination.x - position.x);
+            float yDist = Mathf.Abs(destination.z - position.z);
+            heuristic = xDist + yDist;
+        }
+        else if (GridManager.heuristic == Heuristic.DIAGONAL)
+        {
+            float xDist = Mathf.Abs(destination.x - position.x);
+            float yDist = Mathf.Abs(destination.z - position.z);
+            heuristic = Mathf.Max(xDist, yDist);
+        }
+        else if(GridManager.heuristic == Heuristic.EUCLIDEAN)
+        {
+            heuristic = Mathf.Abs((destination - position).magnitude);
+        }
         return heuristic;
     }
+
     public float CostToMove(Vector3 origin)
     {
-        return Mathf.Abs((origin - position).magnitude);
+        float baseCost = Mathf.Abs((origin - position).magnitude);
+        if(swamp)
+        {
+            baseCost *= swampMultiplier;
+        }
+        return baseCost;
     }
 
     public float GetSize()
@@ -75,25 +101,49 @@ public class Cell : MonoBehaviour
     {
         line.enabled = false;
     }
+    /// <summary>
+    /// Returns true if the two cells are either vertically or horizontally aligned (NOT diagonal)
+    /// </summary>
+    /// <param name="neighbour"></param>
+    /// <returns></returns>
+    public bool CheckStraighAlignment(Cell neighbour)
+    {
+        return neighbour.position.x == position.x || neighbour.position.z == position.z;
+    }
 
-    //left click
     private void OnMouseDown()
     {
-        //Left click + Shift sets destination
-        if (Input.GetKey("right shift") || Input.GetKey("left shift"))
+        if(GetPassable())
         {
-            GridManager.instance.SetDestination(this);
-        }
-        //Normal left click sets origin
-        else
-        {
-            GridManager.instance.SetOrigin(this);
+            //Left click + Shift sets destination
+            if (Input.GetKey("right shift") || Input.GetKey("left shift"))
+            {
+                GridManager.instance.SetDestination(this);
+            }
+            //Normal left click sets origin
+            else
+            {
+                GridManager.instance.SetOrigin(this);
+            }
         }
     }
     void OnMouseOver()
     {
+        //Right click toggles swamp
+        if (Input.GetMouseButtonDown(1) && (Input.GetKey("right shift") || Input.GetKey("left shift")))
+        {
+            swamp = !swamp;
+            if(swamp)
+            {
+                SetColor(swampColor);
+            }
+            else
+            {
+                SetColor(normalColor);
+            }
+        }
         //Right click toggles passable
-        if(Input.GetMouseButtonDown(1))
+        else if (Input.GetMouseButtonDown(1))
         {
             passable = !passable;
             if(passable)
@@ -110,5 +160,31 @@ public class Cell : MonoBehaviour
     public bool GetPassable()
     {
         return passable;
+    }
+    /// <summary>
+    /// Instantiates and returns a Cell
+    /// </summary>
+    /// <param name="prefab"></param>
+    /// <param name="position"></param>
+    /// <param name="rotation"></param>
+    /// <returns></returns>
+    public static Cell Instantiate(GameObject prefab, Vector3 position, Quaternion rotation)
+    {
+        GameObject newCell = GameObject.Instantiate(prefab, position, rotation);
+        return newCell.GetComponent<Cell>();
+    }
+    /// <summary>
+    /// Instantiates and returns a Cell
+    /// </summary>
+    /// <param name="prefab"></param>
+    /// <param name="position"></param>
+    /// <param name="rotation"></param>
+    /// <param name="color"></param>
+    /// <returns></returns>
+    public static Cell Instantiate(GameObject prefab, Vector3 position, Quaternion rotation, Color color)
+    {
+        GameObject newCell = GameObject.Instantiate(prefab, position, rotation);
+        newCell.GetComponent<Cell>().SetColor(color);
+        return newCell.GetComponent<Cell>();
     }
 }

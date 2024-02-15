@@ -122,6 +122,7 @@ MonoBehaviour:
   render: {fileID: 1115030950615854059}
   line: {fileID: 3947056726370886850}
   mountainScale: {x: 1, y: 2, z: 1}
+  swampMultiplier: 2
   position: {x: 0, y: 0, z: 0}
   neighbours: []
   heuristic: -1

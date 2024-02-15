@@ -36,10 +36,7 @@ public struct Sector
         {
             for (int y = 0; y < width; y++)
             {
-                GameObject newCellObj = GameObject.Instantiate(cellPrefab, originPosition, cellPrefab.transform.rotation);
-                Cell newCell = newCellObj.GetComponent<Cell>();
-                newCell.transform.position = new Vector3(newCell.transform.position.x + (x * cellSize), newCell.transform.position.y, newCell.transform.position.z + (-y * cellSize));
-                newCell.SetColor(sectorColor);
+                Cell newCell = Cell.Instantiate(cellPrefab, new Vector3(originPosition.x + (x * cellSize), originPosition.y, originPosition.z + (-y * cellSize)), cellPrefab.transform.rotation, sectorColor);
                 newCell.name = (int)sectorID.x + "," + (int)sectorID.y + "_Cell_" + x + "," + y;
                 newCell.sector = this;
                 cells[x, y] = newCell;
@@ -61,6 +58,12 @@ public struct Sector
     }
 }
 
+public enum Heuristic
+{
+    MANHATTAN,
+    EUCLIDEAN,
+    DIAGONAL
+}
 
 public class GridManager : MonoBehaviour
 {
@@ -72,6 +75,8 @@ public class GridManager : MonoBehaviour
     [SerializeField] int sectorWidth;
     [Tooltip("The height & width (in sectors) of the overall grid.")]
     [SerializeField] int gridWidth;
+    [Tooltip("The UI script that displays whether the pathfind was succesful or not.")]
+    [SerializeField] ResultDisplay results;
     Sector[,] sectors;
     float cellSize;
 
@@ -79,6 +84,8 @@ public class GridManager : MonoBehaviour
     Cell destination;
 
     public static GridManager instance;
+    public static Heuristic heuristic = Heuristic.DIAGONAL;
+    public static bool diagonal = true;
 
     private void Start()
     {
@@ -266,19 +273,15 @@ public class GridManager : MonoBehaviour
             List<Cell> openList = new List<Cell>();
             List<Cell> closedList = new List<Cell>();
             openList.Add(origin);
-
+            //Searches for the end
             while(openList.Count > 0 && !foundPath)
             {
                 Cell head = openList.First();
                 //Sets the open list cell with the lowest expected cost as head
                 foreach (Cell cell in openList)
                 {
-                    if(cell.heuristic < 0)
-                    {
-                        cell.CalculateHeuristic(destination.position);
-                    }
-                    cell.expectedCost = cell.costSoFar + cell.heuristic;
-                    if( cell.expectedCost < head.expectedCost)
+                    cell.expectedCost = cell.costSoFar + cell.CalculateHeuristic(destination.position);
+                    if ( cell.expectedCost < head.expectedCost)
                     {
                         head = cell;
                     }
@@ -289,33 +292,35 @@ public class GridManager : MonoBehaviour
                 closedList.Add(head);
                 foreach(Cell cell in head.neighbours)
                 {
-                    //If it's the goal, congrats!
-                    if(cell == destination)
+                    //Cannot cross diagonals if the game rule is false
+                    if(diagonal || head.CheckStraighAlignment(cell))
                     {
-                        cell.parent = head;
-                        foundPath = true;
-                        break;
-                    }
-                    //If it's not on the closed list, move on to open list
-                    else if(cell.GetPassable() && !closedList.Contains(cell))
-                    {
-                        float newCellCost = head.costSoFar + cell.CostToMove(head.position);
-                        //If it's not on the open list, add it
-                        if (!openList.Contains(cell))
+                        //If it's the goal, congrats!
+                        if (cell == destination)
                         {
                             cell.parent = head;
-                            cell.costSoFar = newCellCost;
-                            cell.CalculateHeuristic(destination.position);
-                            cell.expectedCost = cell.heuristic + cell.costSoFar;
-                            openList.Add(cell);
+                            foundPath = true;
+                            break;
                         }
-                        //If it's on the open list but this is a better path, overwrite the old path
-                        else if(newCellCost < cell.costSoFar)
+                        //If it's not on the closed list, move on to open list
+                        else if (cell.GetPassable() && !closedList.Contains(cell))
                         {
-                            cell.parent = head;
-                            cell.costSoFar = newCellCost;
-                            cell.CalculateHeuristic(destination.position);
-                            cell.expectedCost = cell.heuristic + cell.costSoFar;
+                            float newCellCost = head.costSoFar + cell.CostToMove(head.position);
+                            //If it's not on the open list, add it
+                            if (!openList.Contains(cell))
+                            {
+                                cell.parent = head;
+                                cell.costSoFar = newCellCost;
+                                cell.expectedCost = cell.costSoFar + cell.CalculateHeuristic(destination.position);
+                                openList.Add(cell);
+                            }
+                            //If it's on the open list but this is a better path, overwrite the old path
+                            else if (newCellCost < cell.costSoFar)
+                            {
+                                cell.parent = head;
+                                cell.costSoFar = newCellCost;
+                                cell.expectedCost = cell.costSoFar + cell.CalculateHeuristic(destination.position);
+                            }
                         }
                     }
                 }
@@ -325,6 +330,7 @@ public class GridManager : MonoBehaviour
             {
                 TracePath();
             }
+            results.SetStatus(foundPath);
         }
     }
     /// <summary>
