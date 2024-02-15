@@ -73,15 +73,23 @@ public class Cell : MonoBehaviour
     //left click
     private void OnMouseDown()
     {
-        GridManager.instance.SetOrigin(this);
-        GridManager.instance.Pathfind();
+        //Left click + Shift sets destination
+        if (Input.GetKey("right shift") || Input.GetKey("left shift"))
+        {
+            GridManager.instance.SetDestination(this);
+        }
+        //Normal left click sets origin
+        else
+        {
+            GridManager.instance.SetOrigin(this);
+        }
     }
     void OnMouseOver()
     {
         //right click
         if(Input.GetMouseButtonDown(1))
         {
-            GridManager.instance.SetDestination(this);
+            //GridManager.instance.SetDestination(this);
             //GridManager.instance.Pathfind();
         }
     }
