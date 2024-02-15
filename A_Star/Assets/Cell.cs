@@ -5,10 +5,15 @@ public class Cell : MonoBehaviour
 {
     [SerializeField] Renderer render;
     [SerializeField] LineRenderer line;
+    [SerializeField] Vector3 mountainScale;
+    Vector3 normalScale;
     [HideInInspector] public Sector sector;
     [HideInInspector] public Vector3 position;
 
     public List<Cell> neighbours = new List<Cell>();
+
+    bool passable = true;
+
     //A* data
     public float heuristic = -1;
     public float costSoFar = 0;
@@ -17,6 +22,7 @@ public class Cell : MonoBehaviour
     private void Start()
     {
         position = line.transform.position;
+        normalScale = transform.localScale;
     }
     public void ResetPathfinding()
     {
@@ -86,11 +92,23 @@ public class Cell : MonoBehaviour
     }
     void OnMouseOver()
     {
-        //right click
+        //Right click toggles passable
         if(Input.GetMouseButtonDown(1))
         {
-            //GridManager.instance.SetDestination(this);
-            //GridManager.instance.Pathfind();
+            passable = !passable;
+            if(passable)
+            {
+                transform.localScale = normalScale;
+            }
+            else
+            {
+                transform.localScale = mountainScale;
+            }
         }
+    }
+
+    public bool GetPassable()
+    {
+        return passable;
     }
 }

@@ -297,7 +297,7 @@ public class GridManager : MonoBehaviour
                         break;
                     }
                     //If it's not on the closed list, move on to open list
-                    else if(!closedList.Contains(cell))
+                    else if(cell.GetPassable() && !closedList.Contains(cell))
                     {
                         float newCellCost = head.costSoFar + cell.CostToMove(head.position);
                         //If it's not on the open list, add it
