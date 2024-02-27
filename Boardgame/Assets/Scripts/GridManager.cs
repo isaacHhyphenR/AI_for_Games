@@ -215,6 +215,7 @@ public class GridManager : MonoBehaviour
         }
         return end;
     }
+
     /// <summary>
     /// Returns the gridsquare in the specified direciton & distance to the start
     /// </summary>
@@ -231,6 +232,36 @@ public class GridManager : MonoBehaviour
         }
         return null;
     }
+    /// <summary>
+    /// Returns all of the gridsquares within distance of start along the specified direction. If includeStart is set to true, start will be the first entry
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public static GridSquare[] SquaresInDirection(GridSquare start, Direction direction, int distance, bool includeStart)
+    {
+
+        GridSquare[] squares;
+        if(includeStart)
+        {
+            squares = new GridSquare[distance + 1];
+            for (int i = 0; i < distance + 1; i++)
+            {
+                squares[i] = SquareInDirection(start, direction, i);
+            }
+        }
+        else
+        {
+            squares = new GridSquare[distance];
+            for (int i = 0; i < distance; i++)
+            {
+                squares[i] = SquareInDirection(start, direction, i + 1);
+            }
+        }
+        return squares;
+    }
+
     /// <summary>
     /// Returns the larger of X or Y distance between 2 coordinates
     /// </summary>

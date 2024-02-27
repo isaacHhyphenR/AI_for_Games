@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public class Piece : MonoBehaviour
@@ -6,14 +7,15 @@ public class Piece : MonoBehaviour
     [SerializeField] bool canWin;
     [Tooltip("The blocks that make up this piece. Index 0 should be the head.")]
     [SerializeField] GameObject[] blocks;
-    GridSquare headSquare;
-    GridSquare tailSquare;
+    int length;
+    GridSquare[] currentSquares;
     [Tooltip("How far above the grid the pieces sit")]
     [SerializeField] float heightOffset;
     [Tooltip("The player who owns this piece")]
     Player owner;
     Direction direction;
     bool mouseDown = false;
+    
 
     private void Update()
     {
@@ -51,34 +53,33 @@ public class Piece : MonoBehaviour
     bool TryRotateToSpace(GridSquare destination)
     {
         //Trys to rotate from the head
-        int rotateDistance = GridManager.DistanceToSquare(headSquare, destination);
-        Direction rotateDirection = GridManager.DirectionBetweenSquares(destination, headSquare);
-        if (rotateDistance == blocks.Length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
+        int rotateDistance = GridManager.DistanceToSquare(currentSquares[0], destination);
+        Direction rotateDirection = GridManager.DirectionBetweenSquares(destination, currentSquares[0]);
+        if (rotateDistance == length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
         {
-            SetPosition(headSquare, rotateDirection);
+            SetPosition(currentSquares[0], rotateDirection);
             return true;
         }
         //If not, trys to rotate from the tail
-        rotateDistance = GridManager.DistanceToSquare(tailSquare, destination);
-        rotateDirection = GridManager.DirectionBetweenSquares(tailSquare, destination);
-        if (rotateDistance == blocks.Length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
+        rotateDistance = GridManager.DistanceToSquare(currentSquares.Last(), destination);
+        rotateDirection = GridManager.DirectionBetweenSquares(currentSquares.Last(), destination);
+        if (rotateDistance == length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
         {
-            SetPosition(GridManager.SquareInDirection(tailSquare, rotateDirection, blocks.Length - 1), rotateDirection);
+            SetPosition(GridManager.SquareInDirection(currentSquares.Last(), rotateDirection, length - 1), rotateDirection);
             return true;
         }
-        //Debug.Log(tailSquare.GetCoordinates().x + "," + tailSquare.GetCoordinates().x + "\n" + headSquare.GetCoordinates().x + "," + headSquare.GetCoordinates().y + "\n" + rotateDistance + "\n" + rotateDirection + ", " + direction);
         //If cannot rotate from head or tail, returns false
         return false;
     }
     /// <summary>
-    /// If it successfulyl moves to a space, returns true. Otherwise, returns false.
+    /// If it successfully moves to a space, returns true. Otherwise, returns false.
     /// </summary>
     /// <param name="destination"></param>
     /// <returns></returns>
     bool TryMoveToSpace(GridSquare destination)
     {
         //If you're facing the correct direction, move
-        if(GridManager.DirectionBetweenSquares(headSquare, destination) == direction)
+        if(GridManager.DirectionBetweenSquares(currentSquares[0], destination) == direction)
         {
             SetPosition(destination, direction);
             return true;
@@ -101,10 +102,19 @@ public class Piece : MonoBehaviour
     /// <param name="stemDirection"></param>
     public void SetPosition(GridSquare headPosition, Direction headDirection)
     {
+        length = blocks.Length;
+        //Tells the current gridsquares it's gone
+        if (currentSquares != null)
+        {
+            foreach (GridSquare square in currentSquares)
+            {
+                square.SetPiece(null);
+            }
+        }
+        //Moves the piece itself
         transform.position = headPosition.transform.position + new Vector3(0,heightOffset,0);
-        headSquare = headPosition;
-        tailSquare = GridManager.SquareInDirection(headPosition, GridManager.OppositeDirection(headDirection), blocks.Length - 1);
         direction = headDirection;
+        currentSquares = GridManager.SquaresInDirection(headPosition, GridManager.OppositeDirection(direction), length - 1, true);
         switch (direction)
         {
             case Direction.NORTH:
@@ -119,6 +129,11 @@ public class Piece : MonoBehaviour
             case Direction.WEST:
                 transform.localEulerAngles = new Vector3(0, 0, 0);
                 break;
+        }
+        //Tells the new squares its arrived
+        foreach (GridSquare square in currentSquares)
+        {
+            square.SetPiece(this);
         }
     }
     /// <summary>
