@@ -11,6 +11,10 @@ public enum Direction
 }
 
 [System.Serializable]
+
+/// <summary>
+/// An integer X Y pair
+/// </summary>
 public struct Coordinate
 {
     public int x;
@@ -19,6 +23,19 @@ public struct Coordinate
     {
         x = _x;
         y = _y;
+    }
+}
+/// <summary>
+/// Specifies a square and a piece
+/// </summary>
+public struct Collision
+{
+    public Piece piece;
+    public GridSquare square;
+    public Collision(Piece _piece, GridSquare _square)
+    {
+        piece = _piece;
+        square = _square;
     }
 }
 
@@ -260,6 +277,26 @@ public class GridManager : MonoBehaviour
             }
         }
         return squares;
+    }
+
+    /// <summary>
+    /// Returns the first piece occupying squares in the direction & distance from start, along with the square it was encountered on. Returns a null collision is none
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public static Collision FirstPieceEncountered(GridSquare start, Direction direction, int distance)
+    {
+        GridSquare[] squaresToSearch = SquaresInDirection(start, direction, distance, false);
+        foreach(GridSquare square in squaresToSearch)
+        {
+            if(square.GetPiece())
+            {
+                return new Collision(square.GetPiece(), square);
+            }
+        }
+        return new Collision(null, null);
     }
 
     /// <summary>

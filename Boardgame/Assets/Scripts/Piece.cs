@@ -1,4 +1,5 @@
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Piece : MonoBehaviour
@@ -36,7 +37,7 @@ public class Piece : MonoBehaviour
                 {
                     //Trys to rotate. if cannot rotate, trys to move
                     GridSquare destination = hit.collider.GetComponent<GridSquare>();
-                    if(TryRotateToSpace(destination) || TryMoveToSpace(destination))
+                    if(TryRotateToSpace(destination) || TryDashToSpace(destination))
                     {
                         EndMove();
                     }
@@ -52,38 +53,73 @@ public class Piece : MonoBehaviour
     /// <returns></returns>
     bool TryRotateToSpace(GridSquare destination)
     {
-        //Trys to rotate from the head
-        int rotateDistance = GridManager.DistanceToSquare(currentSquares[0], destination);
-        Direction rotateDirection = GridManager.DirectionBetweenSquares(destination, currentSquares[0]);
+        return (RotateFromTo(currentSquares.First(), destination, true) || RotateFromTo(currentSquares.Last(), destination, false));
+    }
+    /// <summary>
+    /// Tryes to rotate from the specified square to the specified quare
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="destination"></param>
+    /// <param name="startIsHead">Determines the direction calculation</param>
+    /// <returns></returns>
+    bool RotateFromTo(GridSquare start, GridSquare destination, bool startIsHead)
+    {
+        int rotateDistance = GridManager.DistanceToSquare(start, destination);
+        Direction rotateDirection = GridManager.DirectionBetweenSquares(destination, start);
+        GridSquare head = start;
+        if(!startIsHead)
+        {
+            rotateDirection = GridManager.DirectionBetweenSquares(start, destination);
+            head = GridManager.SquareInDirection(currentSquares.Last(), rotateDirection, length - 1);
+        }
+        //Trys the actual rotation
         if (rotateDistance == length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
         {
-            SetPosition(currentSquares[0], rotateDirection);
-            return true;
+            return TryMoveToSpace(start, head, rotateDirection);
         }
-        //If not, trys to rotate from the tail
-        rotateDistance = GridManager.DistanceToSquare(currentSquares.Last(), destination);
-        rotateDirection = GridManager.DirectionBetweenSquares(currentSquares.Last(), destination);
-        if (rotateDistance == length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
-        {
-            SetPosition(GridManager.SquareInDirection(currentSquares.Last(), rotateDirection, length - 1), rotateDirection);
-            return true;
-        }
-        //If cannot rotate from head or tail, returns false
         return false;
     }
     /// <summary>
-    /// If it successfully moves to a space, returns true. Otherwise, returns false.
+    /// If it successfully dashes to a space, returns true. Otherwise, returns false.
     /// </summary>
     /// <param name="destination"></param>
     /// <returns></returns>
-    bool TryMoveToSpace(GridSquare destination)
+    bool TryDashToSpace(GridSquare destination)
     {
         //If you're facing the correct direction, move
-        if(GridManager.DirectionBetweenSquares(currentSquares[0], destination) == direction)
+        if(GridManager.DirectionBetweenSquares(currentSquares.First(), destination) == direction)
         {
-            SetPosition(destination, direction);
+            return TryMoveToSpace(currentSquares.First(), destination, direction);
+        }
+        return false;
+    }
+    /// <summary>
+    /// Attempts to move to the specified position; position should already have been checked for move validity EXCEPT for other pieces
+    /// </summary>
+    /// <param name="start">The location from which the piece begins its move</param>
+    /// <param name="head">The location the piece is trying to place its head</param>
+    /// <param name="newDirection"></param>
+    /// <returns></returns>
+    bool TryMoveToSpace(GridSquare start, GridSquare destination, Direction newDirection)
+    {
+        Collision collision = GridManager.FirstPieceEncountered(start, newDirection, GridManager.DistanceToSquare(start,destination));
+        //You can move if there's no piece in the way
+        if (collision.piece == null)
+        {
+            SetPosition(destination, newDirection);
+            Debug.Log("No Piece");
             return true;
         }
+        //If there's a piece in the way, you can destroy it if it's a differnet player AND
+        //you are not landing on it's head && it's your head landing on it
+        if (collision.piece != null && collision.piece.GetOwner() != owner &&
+            collision.piece.GetHeadLocation() != collision.square && collision.square == destination)
+        {
+            collision.piece.Destroy();
+            SetPosition(destination, newDirection);
+            return true;
+        }
+        //If there's a piece you can't destroy, return false
         return false;
     }
 
@@ -144,6 +180,11 @@ public class Piece : MonoBehaviour
     {
         owner = _owner;
     }
+    public Player GetOwner()
+    {
+        return owner;
+    }
+
     /// <summary>
     /// Returns whether this piece will win the game upon placing it's head on the opponent's homerow
     /// </summary>
@@ -160,6 +201,14 @@ public class Piece : MonoBehaviour
             GameManager.SelectPiece(this);
         }
     }
+    /// <summary>
+    /// Removes the piece from the game
+    /// </summary>
+    private void Destroy()
+    {
+        owner.RemovePiece(this);
+        Destroy(gameObject);
+    }
 
     void Deselect()
     {
@@ -171,5 +220,14 @@ public class Piece : MonoBehaviour
     {
         GameManager.SelectPiece(null);
         GameManager.AdvanceTurn();
+    }
+    /// <summary>
+    /// Returns the gridsquare where this piece's head is located
+    /// </summary>
+    /// <returns></returns>
+    public GridSquare GetHeadLocation()
+    {
+        Debug.Log(gameObject.name + "'s head is at " + currentSquares.First().gameObject.name);
+        return currentSquares.First();
     }
 }

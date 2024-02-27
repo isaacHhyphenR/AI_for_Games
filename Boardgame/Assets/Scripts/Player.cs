@@ -31,6 +31,14 @@ public class Player : MonoBehaviour
         piece.SetOwner(this);
     }
     /// <summary>
+    /// Removes the specified piece from your control
+    /// </summary>
+    /// <param name="piece"></param>
+    public void RemovePiece(Piece piece)
+    {
+        pieces.Remove(piece);
+    }
+    /// <summary>
     /// Sets the row that this player considers home
     /// </summary>
     /// <param name="row"></param>

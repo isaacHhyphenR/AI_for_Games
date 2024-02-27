@@ -44,7 +44,6 @@ public class GameManager : MonoBehaviour
         selectedPiece = piece;
         if(piece != null )
         {
-            Debug.Log(selectedPiece.gameObject.name);
         }
     }
     public static Piece GetSelectedPiece()
