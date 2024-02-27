@@ -1,0 +1,304 @@
+using Unity.VisualScripting;
+using UnityEngine;
+
+public enum Direction
+{
+    NORTH = 0,
+    EAST,
+    SOUTH,
+    WEST,
+    DIAGONAL
+}
+
+[System.Serializable]
+public struct Coordinate
+{
+    public int x;
+    public int y;
+    public Coordinate(int _x, int _y)
+    {
+        x = _x;
+        y = _y;
+    }
+}
+
+public class GridManager : MonoBehaviour
+{
+    [Header("Grid")]
+    [Tooltip("The size, in squares, of the grid")]
+    [SerializeField] Coordinate gridSize;
+    [Tooltip("The prefab to build the grid out of")]
+    [SerializeField] GameObject gridPrefab;
+    [Header("Pieces")]
+    [Tooltip("The prefab to spawn the pawns")]
+    [SerializeField] GameObject pawnPrefab;
+    [Tooltip("The prefab to spawn the queens")]
+    [SerializeField] GameObject queenPrefab;
+
+    GridSquare[,] grid;
+    float squareSize;
+
+    static GridManager instance;
+
+    void Start()
+    {
+        instance = this;
+        GenerateGrid();
+        SpawnPieces();
+    }
+    /// <summary>
+    /// Generates a full grid, including adding colors and neighbours
+    /// </summary>
+    void GenerateGrid()
+    {
+        bool rowStartsFirstColor = true;
+        //Determines size for the grid
+        squareSize = gridPrefab.GetComponent<GridSquare>().GetSize();
+        grid = new GridSquare[gridSize.x, gridSize.y];
+        Vector2 offset = new Vector2(squareSize * gridSize.x / 2, -squareSize * gridSize.y / 2);
+        //Sets up grid
+        for (int y = 0; y < gridSize.y; y++)
+        {
+            bool firstColor = rowStartsFirstColor;
+            rowStartsFirstColor = !rowStartsFirstColor;
+            for (int x = 0; x < gridSize.x; x++)
+            {
+                GridSquare newSquare = Instantiate(gridPrefab, transform).GetComponent<GridSquare>();
+                newSquare.transform.position = new Vector3(x * squareSize - offset.x, 0, y * -squareSize - offset.y);
+                newSquare.SetCoordinates(new Coordinate(x, y));
+                newSquare.gameObject.name = "Square_" + (x + 1) + "," + (y + 1);
+                grid[x, y] = newSquare;
+                //Checkerboard colors
+                if (firstColor)
+                {
+                    newSquare.SetColor(GameManager.players[0].GetColor());
+                }
+                else
+                {
+                    newSquare.SetColor(GameManager.players[1].GetColor());
+                }
+                firstColor = !firstColor;
+            }
+        }
+        //Sets up neighbours
+        for (int y = 0; y < gridSize.y; y++)
+        {
+            for (int x = 0; x < gridSize.x; x++)
+            {
+                if(y > 0)
+                {
+                    grid[x, y].SetNeighbour(Direction.NORTH, grid[x, y - 1]);
+                }
+                if (y < gridSize.y -1)
+                {
+                    grid[x, y].SetNeighbour(Direction.SOUTH, grid[x, y + 1]);
+                }
+                if (x > 0)
+                {
+                    grid[x, y].SetNeighbour(Direction.NORTH, grid[x - 1, y]);
+                }
+                if (x < gridSize.x - 1)
+                {
+                    grid[x, y].SetNeighbour(Direction.NORTH, grid[x + 1, y]);
+                }
+            }
+        }
+        //Sets the player's homerows
+        GameManager.players[0].SetHomeRow(0);
+        GameManager.players[1].SetHomeRow(gridSize.y - 1);
+    }
+    /// <summary>
+    /// Spawns the initial 2 pawns & 1 queen per side
+    /// </summary>
+    void SpawnPieces()
+    {
+        bool firstDirection = true;
+        Direction dir;
+        foreach (Player player in GameManager.players)
+        {
+            //Determines direction
+            if (firstDirection)
+            {
+                dir = Direction.NORTH;
+            }
+            else
+            {
+                dir = Direction.SOUTH;
+            }
+            firstDirection = !firstDirection;
+            //Queen
+            Piece piece = Instantiate(queenPrefab, player.transform).GetComponent<Piece>();
+            piece.SetPosition(grid[player.GetStartingY(0), player.GetHomeRow()], dir);
+            player.AddPiece(piece);
+            //Pawn1
+            piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
+            piece.SetPosition(grid[player.GetStartingY(1), player.GetHomeRow()], dir);
+            player.AddPiece(piece);
+            //Pawn2
+            piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
+            piece.SetPosition(grid[player.GetStartingY(2), player.GetHomeRow()], dir);
+            player.AddPiece(piece);
+
+        }
+    }
+    /// <summary>
+    /// Returns the Direction between two coordinates. DIAGONAL is not valid
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static Direction DirectionBetweenCoordinates(Coordinate start, Coordinate end)
+    {
+        if (end.y > start.y && end.x == start.x)
+        {
+            return Direction.SOUTH;
+        }
+        else if (end.y < start.y && end.x == start.x)
+        {
+            return Direction.NORTH;
+        }
+        else if (end.x > start.x && end.y == start.y)
+        {
+            return Direction.EAST;
+        }
+        else if (end.x < start.x && end.y == start.y)
+        {
+            return Direction.WEST;
+        }
+        return Direction.DIAGONAL;
+    }
+    /// <summary>
+    /// Returns the Direction between two positions. DIAGONAL is not valid
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static Direction DirectionBetweenPositions(Vector3 start, Vector3 end)
+    {
+        return DirectionBetweenCoordinates(new Coordinate((int)start.x, (int)start.z), new Coordinate((int)end.x, (int)end.z));
+    }
+    /// <summary>
+    /// Returns the Direction between two gridquares. DIAGONAL is not valid
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static Direction DirectionBetweenSquares(GridSquare start, GridSquare end)
+    {
+        return DirectionBetweenCoordinates(start.GetCoordinates(), end.GetCoordinates());
+    }
+
+    /// <summary>
+    /// Returns the coordinates in the specified direction & distance to starts
+    /// </summary>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public static Coordinate CoordinateInDirection(Coordinate start, Direction direction, int distance)
+    {
+        Coordinate end = start;
+        if(direction == Direction.NORTH)
+        {
+            end.y -= distance;
+        }
+        else if(direction == Direction.SOUTH)
+        {
+            end.y += distance;
+        }
+        else if (direction == Direction.EAST)
+        {
+            end.x += distance;
+        }
+        else if (direction == Direction.WEST)
+        {
+            end.x -= distance;
+        }
+        return end;
+    }
+    /// <summary>
+    /// Returns the gridsquare in the specified direciton & distance to the start
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public static GridSquare SquareInDirection(GridSquare start, Direction direction, int distance)
+    {
+        Coordinate end = CoordinateInDirection(start.GetCoordinates(), direction, distance);
+        if(end.x < instance.gridSize.x && end.y < instance.gridSize.y)
+        {
+            return instance.grid[end.x, end.y];
+        }
+        return null;
+    }
+    /// <summary>
+    /// Returns the larger of X or Y distance between 2 coordinates
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static int DistanceToCoordinate(Coordinate start, Coordinate end)
+    {
+        int xDist = Mathf.Abs(start.x - end.x);
+        int yDist = Mathf.Abs(start.y - end.y);
+        return Mathf.Max(xDist, yDist);
+    }
+    /// <summary>
+    /// Returns the larger of X or Y coordinate distance between 2 squares
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static int DistanceToSquare(GridSquare start, GridSquare end)
+    {
+        return DistanceToCoordinate(start.GetCoordinates(), end.GetCoordinates());
+    }
+
+    /// <summary>
+    /// Returns the direction that faces opposite to the input
+    /// </summary>
+    /// <param name="direction"></param>
+    /// <returns></returns>
+    public static Direction OppositeDirection(Direction direction)
+    {
+        if (direction == Direction.NORTH)
+        {
+            return Direction.SOUTH;
+        }
+        if (direction == Direction.SOUTH)
+        {
+            return Direction.NORTH;
+        }
+        if (direction == Direction.EAST)
+        {
+            return Direction.WEST;
+        }
+        return Direction.EAST;
+    }
+    /// <summary>
+    /// Returns true if the two directions are 90 degrees to each other
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static bool AreDirectionsAdjacent(Direction start, Direction end)
+    {
+        if(start == Direction.NORTH && (end == Direction.EAST || end == Direction.WEST))
+        {
+            return true;
+        }
+        if (start == Direction.SOUTH && (end == Direction.EAST || end == Direction.WEST))
+        {
+            return true;
+        }
+        if (start == Direction.EAST && (end == Direction.NORTH || end == Direction.SOUTH))
+        {
+            return true;
+        }
+        if (start == Direction.WEST && (end == Direction.NORTH || end == Direction.SOUTH))
+        {
+            return true;
+        }
+        return false;
+    }
+}
