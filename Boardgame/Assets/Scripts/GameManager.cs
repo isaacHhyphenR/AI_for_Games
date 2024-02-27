@@ -14,11 +14,18 @@ public class GameManager : MonoBehaviour
 
     static Piece selectedPiece = null;
 
+    [SerializeField] WinPanel winPanel;
+
     [SerializeField] LayerMask _boardClickMask;
     public static LayerMask boardClickMask;
+    [Tooltip("Whether players are currently allowed to make moves. False for win screen, etc.")]
+    public static bool canPlay = true;
+
+    static GameManager instance;
 
     private void Awake()
     {
+        instance = this;
         players = _players;
         currentPlayer = players[currentPlayerIndex];
         currentPlayerIndicator = _currentPlayerIndicator;
@@ -49,5 +56,23 @@ public class GameManager : MonoBehaviour
     public static Piece GetSelectedPiece()
     {
         return selectedPiece;
+    }
+
+    public static void PlayerLost(Player loser)
+    {
+        canPlay = false;
+        Player winner = GetOtherPlayer(loser);
+        instance.winPanel.gameObject.SetActive(true);
+        instance.winPanel.GameWon(winner);
+    }
+
+    public static Player GetOtherPlayer(Player player)
+    {
+        Player other = players[0];
+        if (other == player)
+        {
+            other = players[1];
+        }
+        return other;
     }
 }

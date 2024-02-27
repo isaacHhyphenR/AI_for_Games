@@ -97,29 +97,6 @@ public class GridManager : MonoBehaviour
                 firstColor = !firstColor;
             }
         }
-        //Sets up neighbours
-        for (int y = 0; y < gridSize.y; y++)
-        {
-            for (int x = 0; x < gridSize.x; x++)
-            {
-                if(y > 0)
-                {
-                    grid[x, y].SetNeighbour(Direction.NORTH, grid[x, y - 1]);
-                }
-                if (y < gridSize.y -1)
-                {
-                    grid[x, y].SetNeighbour(Direction.SOUTH, grid[x, y + 1]);
-                }
-                if (x > 0)
-                {
-                    grid[x, y].SetNeighbour(Direction.NORTH, grid[x - 1, y]);
-                }
-                if (x < gridSize.x - 1)
-                {
-                    grid[x, y].SetNeighbour(Direction.NORTH, grid[x + 1, y]);
-                }
-            }
-        }
         //Sets the player's homerows
         GameManager.players[0].SetHomeRow(0);
         GameManager.players[1].SetHomeRow(gridSize.y - 1);
@@ -145,16 +122,16 @@ public class GridManager : MonoBehaviour
             firstDirection = !firstDirection;
             //Queen
             Piece piece = Instantiate(queenPrefab, player.transform).GetComponent<Piece>();
-            piece.SetPosition(grid[player.GetStartingY(0), player.GetHomeRow()], dir);
             player.AddPiece(piece);
+            piece.SetPosition(grid[player.GetStartingX(0), player.GetHomeRow()], dir);
             //Pawn1
             piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
-            piece.SetPosition(grid[player.GetStartingY(1), player.GetHomeRow()], dir);
             player.AddPiece(piece);
+            piece.SetPosition(grid[player.GetStartingX(1), player.GetHomeRow()], dir);
             //Pawn2
             piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
-            piece.SetPosition(grid[player.GetStartingY(2), player.GetHomeRow()], dir);
             player.AddPiece(piece);
+            piece.SetPosition(grid[player.GetStartingX(2), player.GetHomeRow()], dir);
 
         }
     }

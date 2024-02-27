@@ -16,6 +16,8 @@ public class Piece : MonoBehaviour
     Player owner;
     Direction direction;
     bool mouseDown = false;
+    [Tooltip("This effect will play when the piece is destroyed in combat")]
+    [SerializeField] GameObject destructionParticle;
     
 
     private void Update()
@@ -28,7 +30,7 @@ public class Piece : MonoBehaviour
         //On releasing right mouse, check for movement
         else
         {
-            if(GameManager.GetSelectedPiece() == this && mouseDown)
+            if(GameManager.GetSelectedPiece() == this && mouseDown && GameManager.canPlay)
             {
                 mouseDown = false;
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -107,7 +109,6 @@ public class Piece : MonoBehaviour
         if (collision.piece == null)
         {
             SetPosition(destination, newDirection);
-            Debug.Log("No Piece");
             return true;
         }
         //If there's a piece in the way, you can destroy it if it's a differnet player AND
@@ -171,6 +172,11 @@ public class Piece : MonoBehaviour
         {
             square.SetPiece(this);
         }
+        //Checks if it conquered the opponent's home row
+        if(canWin && GetHeadLocation().GetCoordinates().y == GameManager.GetOtherPlayer(owner).GetHomeRow())
+        {
+            GameManager.PlayerLost(GameManager.GetOtherPlayer(owner));
+        }
     }
     /// <summary>
     /// Sets the player in char of this piece
@@ -206,6 +212,12 @@ public class Piece : MonoBehaviour
     /// </summary>
     private void Destroy()
     {
+        foreach(GameObject block in blocks)
+        {
+            ParticleSystem particle = Instantiate(destructionParticle, block.transform.position, block.transform.rotation).GetComponent<ParticleSystem>();
+            var main = particle.main;
+            main.startColor = owner.GetPieceColor();
+        }
         owner.RemovePiece(this);
         Destroy(gameObject);
     }
@@ -227,7 +239,6 @@ public class Piece : MonoBehaviour
     /// <returns></returns>
     public GridSquare GetHeadLocation()
     {
-        Debug.Log(gameObject.name + "'s head is at " + currentSquares.First().gameObject.name);
         return currentSquares.First();
     }
 }

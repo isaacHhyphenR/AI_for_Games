@@ -9,7 +9,7 @@ public class Player : MonoBehaviour
     [Tooltip("The pieces will be this much darker")]
     [SerializeField] float pieceDarkening;
     [Tooltip("The Y positions the pieces start on. Index 0 is always queen")]
-    [SerializeField] int[] startingY;
+    [SerializeField] int[] startingX;
     int homerow;
 
     /// <summary>
@@ -37,6 +37,11 @@ public class Player : MonoBehaviour
     public void RemovePiece(Piece piece)
     {
         pieces.Remove(piece);
+        //If you're out of pieces, lose
+        if(pieces.Count == 0)
+        {
+            GameManager.PlayerLost(this);
+        }
     }
     /// <summary>
     /// Sets the row that this player considers home
@@ -50,9 +55,9 @@ public class Player : MonoBehaviour
     {
         return homerow;
     }
-    public int GetStartingY(int index)
+    public int GetStartingX(int index)
     {
-        return startingY[index];
+        return startingX[index];
     }
     public Color GetColor()
     {
@@ -63,4 +68,9 @@ public class Player : MonoBehaviour
         return color * pieceDarkening;
     }
 
+
+    public string GetName()
+    {
+        return gameObject.name;
+    }
 }

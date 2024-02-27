@@ -52,6 +52,7 @@ MonoBehaviour:
   - {fileID: 1611255621340919928}
   - {fileID: 5068387311574287474}
   heightOffset: 0.7
+  destructionParticle: {fileID: 8803276475040438041, guid: beb9d4db6df35ff4e9f4b9aefd65207b, type: 3}
 --- !u!65 &318518044540751446
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -94,7 +95,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5767654387408037324, guid: a19382cbfae65df42a188c80af710534, type: 3}
       propertyPath: m_Name
-      value: Stem1
+      value: Tail
       objectReference: {fileID: 0}
     - target: {fileID: 5767654387408037324, guid: a19382cbfae65df42a188c80af710534, type: 3}
       propertyPath: m_Layer
