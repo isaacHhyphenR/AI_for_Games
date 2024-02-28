@@ -84,8 +84,9 @@ public class GridManager : MonoBehaviour
             rowStartsFirstColor = !rowStartsFirstColor;
             for (int x = 0; x < gridSize.x; x++)
             {
-                GridSquare newSquare = Instantiate(gridPrefab, transform).GetComponent<GridSquare>();
-                newSquare.transform.position = new Vector3(x * squareSize - offset.x, 0, y * -squareSize - offset.y);
+                Vector3 newPos = new Vector3(x * squareSize - offset.x, 0, y * -squareSize - offset.y);
+                GridSquare newSquare = Instantiate(gridPrefab, newPos, Quaternion.identity).GetComponent<GridSquare>();
+                newSquare.transform.SetParent(transform, false);
                 newSquare.SetCoordinates(new Coordinate(x, y));
                 newSquare.gameObject.name = "Square_" + (x + 1) + "," + (y + 1);
                 grid[x, y] = newSquare;

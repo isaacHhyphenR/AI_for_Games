@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
@@ -25,11 +26,19 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        instance = this;
-        players = _players;
-        currentPlayer = players[currentPlayerIndex];
-        currentPlayerIndicator = _currentPlayerIndicator;
-        boardClickMask = _boardClickMask;
+        if(instance != null)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            instance = this;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            players = _players;
+            currentPlayer = players[currentPlayerIndex];
+            currentPlayerIndicator = _currentPlayerIndicator;
+            boardClickMask = _boardClickMask;
+        }
     }
     private void Start()
     {
@@ -83,5 +92,10 @@ public class GameManager : MonoBehaviour
             other = players[1];
         }
         return other;
+    }
+
+    public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        canPlay = true;
     }
 }
