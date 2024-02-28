@@ -43,6 +43,22 @@ public class Player : MonoBehaviour
             GameManager.PlayerLost(this);
         }
     }
+
+    public void StartTurn()
+    {
+        foreach(Piece piece in pieces)
+        {
+            piece.StartTurn();
+        }
+    }
+    public void EndTurn()
+    {
+        foreach(Piece piece in pieces)
+        {
+            piece.EndTurn();
+        }
+    }
+
     /// <summary>
     /// Sets the row that this player considers home
     /// </summary>
@@ -67,8 +83,6 @@ public class Player : MonoBehaviour
     {
         return color * pieceDarkening;
     }
-
-
     public string GetName()
     {
         return gameObject.name;

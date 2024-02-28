@@ -30,6 +30,9 @@ public class GameManager : MonoBehaviour
         currentPlayer = players[currentPlayerIndex];
         currentPlayerIndicator = _currentPlayerIndicator;
         boardClickMask = _boardClickMask;
+    }
+    private void Start()
+    {
         AdvanceTurn();
     }
     /// <summary>
@@ -37,19 +40,25 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public static void AdvanceTurn()
     {
+        currentPlayer.EndTurn();
         currentPlayerIndex++;
         if(currentPlayerIndex >= players.Length)
         {
             currentPlayerIndex = 0;
         }
         currentPlayer = players[currentPlayerIndex];
+        currentPlayer.StartTurn();
         currentPlayerIndicator.color = currentPlayer.GetColor();
     }
 
     public static void SelectPiece(Piece piece)
     {
+        if(selectedPiece != null)
+        {
+            selectedPiece.Deselect();
+        }
         selectedPiece = piece;
-        if(piece != null )
+        if(selectedPiece != null )
         {
         }
     }

@@ -27,6 +27,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Queen
       objectReference: {fileID: 0}
+    - target: {fileID: 3303752025738907520, guid: 5731d274a4537684cb60d4f0514f4be9, type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3303752025738907520, guid: 5731d274a4537684cb60d4f0514f4be9, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3303752025738907520, guid: 5731d274a4537684cb60d4f0514f4be9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3782268582092505421, guid: 5731d274a4537684cb60d4f0514f4be9, type: 3}
       propertyPath: canWin
       value: 1

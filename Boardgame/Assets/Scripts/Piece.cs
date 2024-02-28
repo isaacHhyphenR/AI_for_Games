@@ -18,7 +18,11 @@ public class Piece : MonoBehaviour
     bool mouseDown = false;
     [Tooltip("This effect will play when the piece is destroyed in combat")]
     [SerializeField] GameObject destructionParticle;
-    
+    [Tooltip("This renderer will light up when this piece is selected/selectable")]
+    [SerializeField] Renderer outline;
+    [SerializeField] Color selectedColor;
+    [SerializeField] Color selectableColor;
+
 
     private void Update()
     {
@@ -205,6 +209,7 @@ public class Piece : MonoBehaviour
         if (GameManager.currentPlayer == owner)
         {
             GameManager.SelectPiece(this);
+            Select();
         }
     }
     /// <summary>
@@ -222,8 +227,20 @@ public class Piece : MonoBehaviour
         Destroy(gameObject);
     }
 
-    void Deselect()
+    void Select()
     {
+        outline.material.color = selectedColor;
+    }
+    public void Deselect()
+    {
+        if (GameManager.currentPlayer == owner)
+        {
+            outline.material.color = selectableColor;
+        }
+        else
+        {
+            outline.material.color = Color.clear;
+        }
     }
     /// <summary>
     /// Call when you successfully move this piece
@@ -240,5 +257,19 @@ public class Piece : MonoBehaviour
     public GridSquare GetHeadLocation()
     {
         return currentSquares.First();
+    }
+    /// <summary>
+    /// Sets the outline color to selectable
+    /// </summary>
+    public void StartTurn()
+    {
+        outline.material.color = selectableColor;
+    }
+    /// <summary>
+    /// Sets the outline to clear
+    /// </summary>
+    public void EndTurn()
+    {
+        outline.material.color = Color.clear;
     }
 }
