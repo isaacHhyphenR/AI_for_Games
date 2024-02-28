@@ -71,17 +71,23 @@ public class Piece : MonoBehaviour
     bool RotateFromTo(GridSquare start, GridSquare destination, bool startIsHead)
     {
         int rotateDistance = GridManager.DistanceToSquare(start, destination);
-        Direction rotateDirection = GridManager.DirectionBetweenSquares(destination, start);
-        GridSquare head = start;
-        if(!startIsHead)
+        Direction rotateDirection = GridManager.DirectionBetweenSquares(start, destination);
+        if(startIsHead)
         {
-            rotateDirection = GridManager.DirectionBetweenSquares(start, destination);
-            head = GridManager.SquareInDirection(currentSquares.Last(), rotateDirection, length - 1);
+            rotateDirection = GridManager.DirectionBetweenSquares(destination, start);
         }
         //Trys the actual rotation
         if (rotateDistance == length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
         {
-            return TryMoveToSpace(start, head, rotateDirection);
+            //If you're rotating around the head the head doesn't move, so you need to pretend you were moving from the destination
+            if(startIsHead)
+            {
+                return TryMoveToSpace(destination, start, rotateDirection);
+            }
+            else
+            {
+                return TryMoveToSpace(start, destination, rotateDirection);
+            }
         }
         return false;
     }
@@ -110,7 +116,7 @@ public class Piece : MonoBehaviour
     {
         Collision collision = GridManager.FirstPieceEncountered(start, newDirection, GridManager.DistanceToSquare(start,destination));
         //You can move if there's no piece in the way
-        if (collision.piece == null)
+        if (collision.piece == null || collision.piece == this)
         {
             SetPosition(destination, newDirection);
             return true;

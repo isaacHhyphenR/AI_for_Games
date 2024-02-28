@@ -24,6 +24,10 @@ public struct Coordinate
         x = _x;
         y = _y;
     }
+    public override string ToString()
+    {
+        return "" + x + "," + y;
+    }
 }
 /// <summary>
 /// Specifies a square and a piece
