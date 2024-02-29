@@ -240,21 +240,34 @@ public class GridManager : MonoBehaviour
     /// <returns></returns>
     public static GridSquare[] SquaresInDirection(GridSquare start, Direction direction, int distance, bool includeStart)
     {
-        GridSquare[] squares;
-        if(includeStart)
+        int offset = 0;
+        int squaresLength = 0;
+        GridSquare[] squares = new GridSquare[distance];
+        if (includeStart)
         {
+            offset = 1;
+            squaresLength++;
             squares = new GridSquare[distance + 1];
-            for (int i = 0; i < distance + 1; i++)
-            {
-                squares[i] = SquareInDirection(start, direction, i);
-            }
+            squares[0] = start;
         }
-        else
+        //Finds every square in the direction
+        for (int i = 0; i < distance; i++)
         {
-            squares = new GridSquare[distance];
-            for (int i = 0; i < distance; i++)
+            GridSquare newSquare = SquareInDirection(start, direction, i + 1);
+            if(newSquare != null)
             {
-                squares[i] = SquareInDirection(start, direction, i + 1);
+                squaresLength++;
+                squares[i + offset] = newSquare;
+            }
+            //If it exits the board, resize and return squares
+            else
+            {
+                GridSquare[] tempSquares = new GridSquare[squaresLength];
+                for(int j = 0; j <  squaresLength; j++)
+                {
+                    tempSquares[j] = squares[j];
+                }
+                return tempSquares;
             }
         }
         return squares;

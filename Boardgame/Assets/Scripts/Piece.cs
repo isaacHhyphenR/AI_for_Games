@@ -305,10 +305,43 @@ public class Piece : MonoBehaviour
                 GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
                 if (destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir))
                 {
-                    moves.Add(new Move(this, destination, newDir, MoveType.HEAD_ROTATION));
+                    moves.Add(new Move(this, destination, newDir));
                 }
             }
         }
+        //Checks all possible tail rotations
+        for (int i = 0; i < 4; i++)
+        {
+            Direction newDir = (Direction)i;
+            if (GridManager.AreDirectionsAdjacent(direction, newDir))
+            {
+                GridSquare destination = GridManager.SquareInDirection(GetTailLocation(), newDir, length - 1);
+                if (destination != null && !MoveBlockedByPiece(GetTailLocation(), destination, destination, newDir))
+                {
+                    moves.Add(new Move(this, destination, newDir));
+                }
+            }
+        }
+        
+        //Checks all possible dashes
+        GridSquare[] dashSquares = GridManager.SquaresInDirection(GetHeadLocation(), direction, 100, false);
+        for (int i = 0; i < dashSquares.Length; i++)
+        {
+            if (MoveBlockedByPiece(GetHeadLocation(), dashSquares[i], dashSquares[i], direction))
+            {
+                break;
+            }
+            else if (dashSquares[i].GetPiece())
+            {
+                moves.Add(new Move(this, dashSquares[i], direction));
+                break;
+            }
+            else
+            {
+                moves.Add(new Move(this, dashSquares[i], direction));
+            }
+        }
+        
         return moves;
     }
 

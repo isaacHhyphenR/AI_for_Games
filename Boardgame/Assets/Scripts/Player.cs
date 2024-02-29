@@ -1,34 +1,43 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEngine.UI.GridLayoutGroup;
 
-public enum MoveType
-{
-    DASH,
-    HEAD_ROTATION,
-    TAIL_ROTATION
-}
 
 public struct Move
 {
     public Piece piece;
     public GridSquare destination;
     public Direction direction;
-    private MoveType type;
     public float weight;
-    public Move(Piece _piece, GridSquare _destination, Direction _direction, MoveType _type)
+    public Move(Piece _piece, GridSquare _destination, Direction _direction)
     {
         piece = _piece;
         destination = _destination;
         direction = _direction;
-        type = _type;
         weight = 1;
+        SetWeights();
     }
-
     public void MakeMove()
     {
         piece.SetPosition(destination, direction);
         piece.EndMove();
+        Debug.Log(piece.gameObject.name + " moves to " +  destination.gameObject.name + ". Weight: " + weight);
+    }
+    /// <summary>
+    /// Calculates the AI's desire to perform this move
+    /// </summary>
+    /// <param name="destroysEnemy"></param>
+    public void SetWeights()
+    {
+        if (destination.GetPiece() && destination.GetPiece() != piece)
+        {
+            weight *= piece.GetOwner().aiDestroyDesire;
+        }
+        if (piece.GetCanWin() && destination.GetCoordinates().y == GameManager.GetOtherPlayer(piece.GetOwner()).GetHomeRow())
+        {
+            weight += 100000000;
+        }
     }
 }
 
@@ -41,16 +50,18 @@ public class Player : MonoBehaviour
     [SerializeField] float pieceDarkening;
     [Tooltip("The Y positions the pieces start on. Index 0 is always queen")]
     [SerializeField] int[] startingX;
-    [Tooltip("If true, the AI will control all moves.")]
-    [SerializeField] bool AI;
-    [Tooltip("How long the AI will wait to take its turn")]
-    [SerializeField] float aiTurnTime;
     float aiTurnTimer = 0;
     List<Move> potentialMoves = new List<Move>();
     [Tooltip("The sum of every potentialMove's weight")]
     float totalMoveWeight = 0;
-    Move moveToMake;
     int homerow;
+    [Header("AI")]
+    [Tooltip("If true, the AI will control all moves.")]
+    [SerializeField] bool AI;
+    [Tooltip("How long the AI will wait to take its turn")]
+    [SerializeField] float aiTurnTime;
+    [Tooltip("How much more this AI wants to make a move that will destory an enemy piece. Multiplicative")]
+    public float aiDestroyDesire;
 
     public void StartTurn()
     {

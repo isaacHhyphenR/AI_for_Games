@@ -49,3 +49,4 @@ MonoBehaviour:
   startingX: 020000000000000005000000
   AI: 0
   aiTurnTime: 0.5
+  aiDestroyDesire: 50
