@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviour
             currentPlayer = players[currentPlayerIndex];
             currentPlayerIndicator = _currentPlayerIndicator;
             boardClickMask = _boardClickMask;
+            Random.InitState((int)System.DateTime.Now.Ticks);
         }
     }
     private void Start()

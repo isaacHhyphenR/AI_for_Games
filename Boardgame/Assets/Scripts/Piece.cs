@@ -15,6 +15,7 @@ public class Piece : MonoBehaviour
     [SerializeField] float heightOffset;
     [Tooltip("The player who owns this piece")]
     Player owner;
+    [Tooltip("The direction the piece is currently facing")]
     Direction direction;
     bool mouseDown = false;
     [Tooltip("This effect will play when the piece is destroyed in combat")]
@@ -42,10 +43,18 @@ public class Piece : MonoBehaviour
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit, 100, GameManager.boardClickMask))
                 {
-                    //Trys to rotate. if cannot rotate, trys to move
                     GridSquare destination = hit.collider.GetComponent<GridSquare>();
-                    if(TryRotateToSpace(destination) || TryDashToSpace(destination))
+                    //Trys to rotate. if cannot rotate, trys to move
+                    if (CanRotateToSpace(destination) || CanDashToSpace(destination))
                     {
+                        Direction moveDirection = GridManager.DirectionBetweenSquares(GetTailLocation(), destination);
+                        //Slightly different rules if rotating around the tail
+                        if (moveDirection == Direction.DIAGONAL)
+                        {
+                            moveDirection = GridManager.DirectionBetweenSquares(destination, GetHeadLocation());
+                            destination = GetHeadLocation();
+                        }
+                        SetPosition(destination,moveDirection);
                         EndMove();
                     }
                 }
@@ -53,95 +62,82 @@ public class Piece : MonoBehaviour
             mouseDown = false;
         }
     }
+
+    private void OnMouseDown()
+    {
+        if (GameManager.currentPlayer == owner && !owner.IsAI())
+        {
+            GameManager.SelectPiece(this);
+            Select();
+        }
+    }
     /// <summary>
     /// If it sucessfully rotates to a space, returns true. Otherwise, returns false
     /// </summary>
     /// <param name="destination"></param>
     /// <returns></returns>
-    bool TryRotateToSpace(GridSquare destination)
+    bool CanRotateToSpace(GridSquare destination)
     {
-        return (RotateFromTo(currentSquares.First(), destination, true) || RotateFromTo(currentSquares.Last(), destination, false));
+        return (CanRotateFromTo(GetHeadLocation(), destination, true) || CanRotateFromTo(GetTailLocation(), destination, false));
     }
     /// <summary>
-    /// Tryes to rotate from the specified square to the specified quare
+    /// Returns whether the piece could rotate to the space
     /// </summary>
     /// <param name="start"></param>
     /// <param name="destination"></param>
-    /// <param name="startIsHead">Determines the direction calculation</param>
+    /// <param name="startIsHead">Whether the head is the stationary pivot point for the rotation</param>
     /// <returns></returns>
-    bool RotateFromTo(GridSquare start, GridSquare destination, bool startIsHead)
+    bool CanRotateFromTo(GridSquare start, GridSquare destination, bool startIsHead)
     {
         int rotateDistance = GridManager.DistanceToSquare(start, destination);
         Direction rotateDirection = GridManager.DirectionBetweenSquares(start, destination);
-        if(startIsHead)
+        GridSquare headDestination = destination;
+        if (startIsHead)
         {
-            rotateDirection = GridManager.DirectionBetweenSquares(destination, start);
+            headDestination = start;
         }
         //Trys the actual rotation
         if (rotateDistance == length - 1 && GridManager.AreDirectionsAdjacent(direction, rotateDirection))
         {
-            //If you're rotating around the head the head doesn't move, so you need to pretend you were moving from the destination
-            if(startIsHead)
-            {
-                return TryMoveToSpace(destination, start, rotateDirection);
-            }
-            else
-            {
-                return TryMoveToSpace(start, destination, rotateDirection);
-            }
+            return !MoveBlockedByPiece(start, destination, headDestination, rotateDirection);
         }
         return false;
     }
     /// <summary>
-    /// If it successfully dashes to a space, returns true. Otherwise, returns false.
+    /// Returns whether the piece could dash to the space
     /// </summary>
     /// <param name="destination"></param>
     /// <returns></returns>
-    bool TryDashToSpace(GridSquare destination)
+    bool CanDashToSpace(GridSquare destination)
     {
         //If you're facing the correct direction, move
         if(GridManager.DirectionBetweenSquares(currentSquares.First(), destination) == direction)
         {
-            return TryMoveToSpace(currentSquares.First(), destination, direction);
+            return !MoveBlockedByPiece(GetHeadLocation(), destination, destination, direction);
         }
         return false;
     }
     /// <summary>
-    /// Attempts to move to the specified position; position should already have been checked for move validity EXCEPT for other pieces
+    /// Returns true if there is a piece blocking the way
     /// </summary>
-    /// <param name="start">The location from which the piece begins its move</param>
-    /// <param name="head">The location the piece is trying to place its head</param>
-    /// <param name="newDirection"></param>
+    /// <param name="space"></param>
     /// <returns></returns>
-    public bool TryMoveToSpace(GridSquare start, GridSquare destination, Direction newDirection)
+    bool MoveBlockedByPiece(GridSquare start, GridSquare destination, GridSquare headDestination, Direction direction)
     {
-        Collision collision = GridManager.FirstPieceEncountered(start, newDirection, GridManager.DistanceToSquare(start,destination));
+        Collision collision = GridManager.FirstPieceEncountered(start, direction, GridManager.DistanceToSquare(start, destination));
         //You can move if there's no piece in the way
         if (collision.piece == null || collision.piece == this)
         {
-            SetPosition(destination, newDirection);
-            return true;
+            return false;
         }
         //If there's a piece in the way, you can destroy it if it's a differnet player AND
-        //you are not landing on it's head && it's your head landing on it
-        if (collision.piece != null && collision.piece.GetOwner() != owner &&
-            collision.piece.GetHeadLocation() != collision.square && collision.square == destination)
+        //you are not landing on its head AND it's your head landing on it
+        if (collision.piece.GetOwner() != owner &&
+            collision.piece.GetHeadLocation() != collision.square && collision.square == headDestination)
         {
-            collision.piece.Destroy();
-            SetPosition(destination, newDirection);
-            return true;
+            return false;
         }
-        //If there's a piece you can't destroy, return false
-        return false;
-    }
-
-    /// <summary>
-    /// Sets the head to the specified color
-    /// </summary>
-    /// <param name="color"></param>
-    public void SetHeadColor(Color headColor)
-    {
-        blocks[0].GetComponent<Renderer>().material.color = headColor;
+        return true;
     }
     /// <summary>
     /// Places the piece's head on the designated square with the head facing in the designated direction
@@ -178,9 +174,13 @@ public class Piece : MonoBehaviour
                 transform.localEulerAngles = new Vector3(0, 0, 0);
                 break;
         }
-        //Tells the new squares its arrived
+        //Tells the new squares it has arrived
         foreach (GridSquare square in currentSquares)
         {
+            if(square.GetPiece())
+            {
+                square.GetPiece().Destroy();
+            }
             square.SetPiece(this);
         }
         //Checks if it conquered the opponent's home row
@@ -211,14 +211,6 @@ public class Piece : MonoBehaviour
         return canWin;
     }
 
-    private void OnMouseDown()
-    {
-        if (GameManager.currentPlayer == owner && !owner.IsAI())
-        {
-            GameManager.SelectPiece(this);
-            Select();
-        }
-    }
     /// <summary>
     /// Removes the piece from the game
     /// </summary>
@@ -249,21 +241,38 @@ public class Piece : MonoBehaviour
             outline.material.color = Color.clear;
         }
     }
+
+    /// <summary>
+    /// Sets the head to the specified color
+    /// </summary>
+    /// <param name="color"></param>
+    public void SetHeadColor(Color headColor)
+    {
+        blocks[0].GetComponent<Renderer>().material.color = headColor;
+    }
     /// <summary>
     /// Call when you successfully move this piece
     /// </summary>
-    void EndMove()
+    public void EndMove()
     {
         GameManager.SelectPiece(null);
-        owner.EndTurn();
+        GameManager.AdvanceTurn();
     }
     /// <summary>
-    /// Returns the gridsquare where this piece's head is located
+    /// Returns the gridSquare where this piece's head is located
     /// </summary>
     /// <returns></returns>
     public GridSquare GetHeadLocation()
     {
         return currentSquares.First();
+    }
+    /// <summary>
+    /// Returns the gridSquare where this piece's tail is located
+    /// </summary>
+    /// <returns></returns>
+    public GridSquare GetTailLocation()
+    {
+        return currentSquares.Last();
     }
     /// <summary>
     /// Sets the outline color to selectable
@@ -279,28 +288,6 @@ public class Piece : MonoBehaviour
     {
         outline.material.color = Color.clear;
     }
-    /// <summary>
-    /// Returns true if there is an enemy piece whose head blocks the move
-    /// </summary>
-    /// <param name="space"></param>
-    /// <returns></returns>
-    bool MoveBlockedByEnemy(GridSquare start, GridSquare destination, Direction direction)
-    {
-        Collision collision = GridManager.FirstPieceEncountered(start, direction, GridManager.DistanceToSquare(start, destination));
-        //You can move if there's no piece in the way
-        if (collision.piece == null || collision.piece == this)
-        {
-            return true;
-        }
-        //If there's a piece in the way, you can destroy it if it's a differnet player AND
-        //you are not landing on it's head && it's your head landing on it
-        if (collision.piece != null && collision.piece.GetOwner() != owner &&
-            collision.piece.GetHeadLocation() != collision.square && collision.square == destination)
-        {
-            return true;
-        }
-        return false;
-    }
 
     /// <summary>
     /// Returns all moves this piece can make
@@ -312,13 +299,21 @@ public class Piece : MonoBehaviour
         //Checks all possible head rotations
         for(int i = 0; i < 4; i++)
         {
-            GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), (Direction)i, length - 1);
-            if(destination != null && !MoveBlockedByEnemy(GetHeadLocation(), destination, (Direction)i))
+            Direction newDir = (Direction)i;
+            if (GridManager.AreDirectionsAdjacent(direction, newDir))
             {
-                moves.Add(new Move(this, destination, (Direction)i, MoveType.HEAD_ROTATION));
+                GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
+                if (destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir))
+                {
+                    moves.Add(new Move(this, destination, newDir, MoveType.HEAD_ROTATION));
+                }
             }
         }
-
         return moves;
+    }
+
+    public Direction GetDirection()
+    {
+        return direction;
     }
 }

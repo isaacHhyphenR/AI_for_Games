@@ -25,22 +25,30 @@ public struct Move
         weight = 1;
     }
 
-    public bool MakeMove()
+    public void MakeMove()
     {
-        Debug.Log(piece.gameObject.name + " moves to " + destination.gameObject.name);
+        Debug.Log(piece.GetDirection() + " " + piece.gameObject.name + " moves " + direction + " to " + destination.gameObject.name);
+        piece.SetPosition(destination, direction);
+        /*
+        bool success = false;
         if(type == MoveType.DASH)
         {
-            return piece.TryMoveToSpace(piece.GetHeadLocation(), destination, direction);
+            success = piece.TryMoveToSpace(piece.GetHeadLocation(), destination, direction);
         }
-        if (type == MoveType.HEAD_ROTATION)
+        else if (type == MoveType.HEAD_ROTATION)
         {
-            return piece.TryMoveToSpace(destination, piece.GetHeadLocation(), direction);
+            success = piece.TryMoveToSpace(destination, piece.GetHeadLocation(), direction);
         }
-        if (type == MoveType.TAIL_ROTATION)
+        else if (type == MoveType.TAIL_ROTATION)
         {
-            return piece.TryMoveToSpace(piece.GetHeadLocation(), destination, direction);
+            success = piece.TryMoveToSpace(piece.GetHeadLocation(), destination, direction);
         }
-        return false;
+        if(success)
+        {
+            piece.EndMove();
+        }
+        return success;
+        */
     }
 }
 
@@ -55,9 +63,13 @@ public class Player : MonoBehaviour
     [SerializeField] int[] startingX;
     [Tooltip("If true, the AI will control all moves.")]
     [SerializeField] bool AI;
+    [Tooltip("How long the AI will wait to take its turn")]
+    [SerializeField] float aiTurnTime;
+    float aiTurnTimer = 0;
     List<Move> potentialMoves = new List<Move>();
     [Tooltip("The sum of every potentialMove's weight")]
     float totalMoveWeight = 0;
+    Move moveToMake;
     int homerow;
 
     public void StartTurn()
@@ -69,9 +81,7 @@ public class Player : MonoBehaviour
         if (AI)
         {
             FindPotentialMoves();
-            Move moveToMake = ChooseRandomMove();
-            moveToMake.MakeMove();
-            GameManager.AdvanceTurn();
+            aiTurnTimer = 0;
         }
     }
     public void EndTurn()
@@ -81,6 +91,19 @@ public class Player : MonoBehaviour
             piece.EndTurn();
         }
     }
+
+    private void Update()
+    {
+        if(AI && GameManager.currentPlayer == this)
+        {
+            aiTurnTimer += Time.deltaTime;
+            if(aiTurnTimer > aiTurnTime)
+            {
+                ChooseAnMakeRandomMove();
+            }
+        }
+    }
+
 
     void FindPotentialMoves()
     {
@@ -114,6 +137,15 @@ public class Player : MonoBehaviour
             }
         }
         return potentialMoves.First();
+    }
+    /// <summary>
+    /// Makes a random move based on their weights, then returns it
+    /// </summary>
+    Move ChooseAnMakeRandomMove()
+    {
+        Move moveMade = ChooseRandomMove();
+        moveMade.MakeMove();
+        return moveMade;
     }
 
     /// <summary>
