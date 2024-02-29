@@ -225,7 +225,7 @@ public class GridManager : MonoBehaviour
     public static GridSquare SquareInDirection(GridSquare start, Direction direction, int distance)
     {
         Coordinate end = CoordinateInDirection(start.GetCoordinates(), direction, distance);
-        if(end.x < instance.gridSize.x && end.y < instance.gridSize.y)
+        if(end.x < instance.gridSize.x && end.y < instance.gridSize.y && end.x >= 0 && end.y >= 0)
         {
             return instance.grid[end.x, end.y];
         }
@@ -240,7 +240,6 @@ public class GridManager : MonoBehaviour
     /// <returns></returns>
     public static GridSquare[] SquaresInDirection(GridSquare start, Direction direction, int distance, bool includeStart)
     {
-
         GridSquare[] squares;
         if(includeStart)
         {
@@ -273,7 +272,7 @@ public class GridManager : MonoBehaviour
         GridSquare[] squaresToSearch = SquaresInDirection(start, direction, distance, false);
         foreach(GridSquare square in squaresToSearch)
         {
-            if(square.GetPiece())
+            if(square && square.GetPiece())
             {
                 return new Collision(square.GetPiece(), square);
             }

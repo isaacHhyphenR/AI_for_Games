@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -112,7 +113,7 @@ public class Piece : MonoBehaviour
     /// <param name="head">The location the piece is trying to place its head</param>
     /// <param name="newDirection"></param>
     /// <returns></returns>
-    bool TryMoveToSpace(GridSquare start, GridSquare destination, Direction newDirection)
+    public bool TryMoveToSpace(GridSquare start, GridSquare destination, Direction newDirection)
     {
         Collision collision = GridManager.FirstPieceEncountered(start, newDirection, GridManager.DistanceToSquare(start,destination));
         //You can move if there's no piece in the way
@@ -212,7 +213,7 @@ public class Piece : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (GameManager.currentPlayer == owner)
+        if (GameManager.currentPlayer == owner && !owner.IsAI())
         {
             GameManager.SelectPiece(this);
             Select();
@@ -254,7 +255,7 @@ public class Piece : MonoBehaviour
     void EndMove()
     {
         GameManager.SelectPiece(null);
-        GameManager.AdvanceTurn();
+        owner.EndTurn();
     }
     /// <summary>
     /// Returns the gridsquare where this piece's head is located
@@ -277,5 +278,47 @@ public class Piece : MonoBehaviour
     public void EndTurn()
     {
         outline.material.color = Color.clear;
+    }
+    /// <summary>
+    /// Returns true if there is an enemy piece whose head blocks the move
+    /// </summary>
+    /// <param name="space"></param>
+    /// <returns></returns>
+    bool MoveBlockedByEnemy(GridSquare start, GridSquare destination, Direction direction)
+    {
+        Collision collision = GridManager.FirstPieceEncountered(start, direction, GridManager.DistanceToSquare(start, destination));
+        //You can move if there's no piece in the way
+        if (collision.piece == null || collision.piece == this)
+        {
+            return true;
+        }
+        //If there's a piece in the way, you can destroy it if it's a differnet player AND
+        //you are not landing on it's head && it's your head landing on it
+        if (collision.piece != null && collision.piece.GetOwner() != owner &&
+            collision.piece.GetHeadLocation() != collision.square && collision.square == destination)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns all moves this piece can make
+    /// </summary>
+    /// <returns></returns>
+    public List<Move> GetAllMoves()
+    {
+        List<Move> moves = new List<Move>();
+        //Checks all possible head rotations
+        for(int i = 0; i < 4; i++)
+        {
+            GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), (Direction)i, length - 1);
+            if(destination != null && !MoveBlockedByEnemy(GetHeadLocation(), destination, (Direction)i))
+            {
+                moves.Add(new Move(this, destination, (Direction)i, MoveType.HEAD_ROTATION));
+            }
+        }
+
+        return moves;
     }
 }
