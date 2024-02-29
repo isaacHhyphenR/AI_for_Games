@@ -27,28 +27,8 @@ public struct Move
 
     public void MakeMove()
     {
-        Debug.Log(piece.GetDirection() + " " + piece.gameObject.name + " moves " + direction + " to " + destination.gameObject.name);
         piece.SetPosition(destination, direction);
-        /*
-        bool success = false;
-        if(type == MoveType.DASH)
-        {
-            success = piece.TryMoveToSpace(piece.GetHeadLocation(), destination, direction);
-        }
-        else if (type == MoveType.HEAD_ROTATION)
-        {
-            success = piece.TryMoveToSpace(destination, piece.GetHeadLocation(), direction);
-        }
-        else if (type == MoveType.TAIL_ROTATION)
-        {
-            success = piece.TryMoveToSpace(piece.GetHeadLocation(), destination, direction);
-        }
-        if(success)
-        {
-            piece.EndMove();
-        }
-        return success;
-        */
+        piece.EndMove();
     }
 }
 
@@ -78,9 +58,10 @@ public class Player : MonoBehaviour
         {
             piece.StartTurn();
         }
+        //Checks for valid moves; if none, you lose! Also compiles for the AI
+        FindPotentialMoves();
         if (AI)
         {
-            FindPotentialMoves();
             aiTurnTimer = 0;
         }
     }
@@ -94,12 +75,13 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
-        if(AI && GameManager.currentPlayer == this)
+        if(AI && GameManager.currentPlayer == this && GameManager.canPlay)
         {
             aiTurnTimer += Time.deltaTime;
             if(aiTurnTimer > aiTurnTime)
             {
                 ChooseAnMakeRandomMove();
+
             }
         }
     }
@@ -119,6 +101,11 @@ public class Player : MonoBehaviour
                 potentialMoves.Add(move);
                 totalMoveWeight += move.weight;
             }
+        }
+        //If no possible moves, you lose
+        if(potentialMoves.Count == 0)
+        {
+            GameManager.PlayerLost(this);
         }
     }
     /// <summary>
