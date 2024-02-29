@@ -293,7 +293,7 @@ public class Piece : MonoBehaviour
     /// Returns all moves this piece can make
     /// </summary>
     /// <returns></returns>
-    public List<Move> GetAllMoves()
+    public List<Move> GetAllMoves(bool calculateWeights)
     {
         List<Move> moves = new List<Move>();
         //Checks all possible head rotations
@@ -305,7 +305,7 @@ public class Piece : MonoBehaviour
                 GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
                 if (destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir))
                 {
-                    moves.Add(new Move(this, destination, newDir));
+                    moves.Add(new Move(this, destination, newDir, MoveType.HEAD_ROTATION, calculateWeights));
                 }
             }
         }
@@ -318,11 +318,10 @@ public class Piece : MonoBehaviour
                 GridSquare destination = GridManager.SquareInDirection(GetTailLocation(), newDir, length - 1);
                 if (destination != null && !MoveBlockedByPiece(GetTailLocation(), destination, destination, newDir))
                 {
-                    moves.Add(new Move(this, destination, newDir));
+                    moves.Add(new Move(this, destination, newDir, MoveType.TAIL_ROTATION, calculateWeights));
                 }
             }
         }
-        
         //Checks all possible dashes
         GridSquare[] dashSquares = GridManager.SquaresInDirection(GetHeadLocation(), direction, 100, false);
         for (int i = 0; i < dashSquares.Length; i++)
@@ -333,20 +332,68 @@ public class Piece : MonoBehaviour
             }
             else if (dashSquares[i].GetPiece())
             {
-                moves.Add(new Move(this, dashSquares[i], direction));
+                moves.Add(new Move(this, dashSquares[i], direction, MoveType.DASH, calculateWeights));
                 break;
             }
             else
             {
-                moves.Add(new Move(this, dashSquares[i], direction));
+                moves.Add(new Move(this, dashSquares[i], direction, MoveType.DASH, calculateWeights));
             }
         }
         
         return moves;
     }
+    /// <summary>
+    /// Returns whether this piece can make any valid moves
+    /// </summary>
+    /// <returns></returns>
+    public bool AnyValidMove()
+    {
+        //Checks all possible head rotations
+        for (int i = 0; i < 4; i++)
+        {
+            Direction newDir = (Direction)i;
+            if (GridManager.AreDirectionsAdjacent(direction, newDir))
+            {
+                GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
+                if (!(destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir)))
+                {
+                    return true;
+                }
+            }
+        }
+        //Checks all possible tail rotations
+        for (int i = 0; i < 4; i++)
+        {
+            Direction newDir = (Direction)i;
+            if (GridManager.AreDirectionsAdjacent(direction, newDir))
+            {
+                GridSquare destination = GridManager.SquareInDirection(GetTailLocation(), newDir, length - 1);
+                if (!(destination != null && !MoveBlockedByPiece(GetTailLocation(), destination, destination, newDir)))
+                {
+                    return true;
+                }
+            }
+        }
+        //Checks all possible dashes
+        GridSquare[] dashSquares = GridManager.SquaresInDirection(GetHeadLocation(), direction, 100, false);
+        for (int i = 0; i < dashSquares.Length; i++)
+        {
+            if (!MoveBlockedByPiece(GetHeadLocation(), dashSquares[i], dashSquares[i], direction))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public Direction GetDirection()
     {
         return direction;
+    }
+
+    public int GetLength()
+    {
+        return length;
     }
 }
