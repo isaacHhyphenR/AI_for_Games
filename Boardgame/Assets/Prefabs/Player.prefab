@@ -44,16 +44,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188dff60405401847a4ac7abe8e1cd4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lostReason: 
   color: {r: 1, g: 0, b: 0, a: 1}
   pieceDarkening: 0.5
   startingX: 020000000000000005000000
   AI: 1
   aiTurnTime: 0.25
-  aiWinDesire: 100000000
+  aiWinDesire: 200000
   aiNotLoseDesire: 100000
   aiDestroyDesire: 1000
   aiPreservePieceDesire: 1000
   aiWeightByTurn:
   - 1
-  - 0.5
   - 0.25
+  - 0.05
+  aiNextTurnAverageWeight: 0.5

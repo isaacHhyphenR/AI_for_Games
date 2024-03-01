@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum MoveType
@@ -28,19 +29,19 @@ public struct Move
         weight = BASE_MOVE_WEIGHT;
         if(calculateWeights)
         {
-            SetWeights();
+            SetWeights(true);
         }
     }
     public void MakeMove()
     {
         piece.SetPosition(destination, direction);
         piece.EndMove();
-        //Debug.Log(piece.gameObject.name + " moves to " +  destination.gameObject.name + ". Weight: " + weight);
     }
     /// <summary>
     /// Calculates the AI's desire to perform this move
     /// </summary>
-    public void SetWeights()
+    /// <param name="recursive">If true, will consider the moves that the piece could make next turn</param>
+    public void SetWeights(bool recursive = false)
     {
         string mods = "";
         //Finds all the squares that will have your tail if you make the move
@@ -84,7 +85,6 @@ public struct Move
                 //Checks if this move would block any of them
                 foreach(GridSquare square in blockingSquares)
                 {
-                    Debug.Log(square.gameObject.name + " blocks " + opponentMove.destination.gameObject.name);
                     if(square == destination)
                     {
                         mods += " preserve";
@@ -152,8 +152,35 @@ public struct Move
         {
             weight = piece.GetOwner().aiWinDesire;
         }
-
-        Debug.Log(piece.gameObject.name + " move to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
+        //Consider the value of next turn's moves. Partially decided by average, partially by highest value move
+        if(recursive)
+        {
+            //Calculates the weight of all next turn moves
+            int nextTurnNumMoves = 0;
+            float nextTurnTotalWeight = 0;
+            float nextTurnMaxWeight = 0;
+            List<Move> nextTurnMoves = piece.GetAllMoves(destination, direction, false);
+            foreach(Move move in nextTurnMoves)
+            {
+                move.SetWeights(false);
+                nextTurnNumMoves++;
+                nextTurnTotalWeight += move.weight;
+                if(move.weight > nextTurnMaxWeight)
+                {
+                    nextTurnMaxWeight = move.weight;
+                }
+            }
+            //translates that into weight for this turn
+            if(nextTurnNumMoves != 0)
+            {
+                float averageWeight = nextTurnTotalWeight / nextTurnNumMoves;
+                weight *= owner.aiWeightByTurn[1] * (averageWeight * owner.aiNextTurnAverageWeight) + (nextTurnMaxWeight * (1 - owner.aiNextTurnAverageWeight));
+            }
+        }
+        if(recursive)
+        {
+            Debug.Log(piece.gameObject.name + " move to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
+        }
 
     }
 }
@@ -195,6 +222,8 @@ public class Player : MonoBehaviour
     public float aiPreservePieceDesire;
     [Tooltip("How much this AI will factor in each turn to the future. Multiplicative")]
     public float[] aiWeightByTurn;
+    [Tooltip("How much of the next turn's potential impact is average as opposed to the maximum value")]
+    public float aiNextTurnAverageWeight;
 
     public void StartTurn()
     {
@@ -282,7 +311,6 @@ public class Player : MonoBehaviour
             //If there's any reason to block it, add it to the list
             if (move.weight > Move.BASE_MOVE_WEIGHT)
             {
-                Debug.LogWarning(move.piece.gameObject.name + " moves to " + move.destination.gameObject.name + "  " + GameManager.turn);
                 dangerousMoves.Add(move);
             }
         }
