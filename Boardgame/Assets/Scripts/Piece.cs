@@ -186,6 +186,7 @@ public class Piece : MonoBehaviour
         //Checks if it conquered the opponent's home row
         if(canWin && GetHeadLocation().GetCoordinates().y == GameManager.GetOtherPlayer(owner).GetHomeRow())
         {
+            GameManager.GetOtherPlayer(owner).lostReason = "lost their homerow.";
             GameManager.PlayerLost(GameManager.GetOtherPlayer(owner));
         }
     }
@@ -292,8 +293,10 @@ public class Piece : MonoBehaviour
     /// <summary>
     /// Returns all moves this piece can make
     /// </summary>
+    /// <param name="calculateWeights">If false, leaves all their weights as default. Significantly reduces intensity</param>
+    /// <param name="includeBlockedByPieces">If true, will include moves that other pieces currently block</param>
     /// <returns></returns>
-    public List<Move> GetAllMoves(bool calculateWeights)
+    public List<Move> GetAllMoves(bool calculateWeights, bool includeBlockedByPieces = false)
     {
         List<Move> moves = new List<Move>();
         //Checks all possible head rotations
@@ -303,7 +306,7 @@ public class Piece : MonoBehaviour
             if (GridManager.AreDirectionsAdjacent(direction, newDir))
             {
                 GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
-                if (destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir))
+                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir)))
                 {
                     moves.Add(new Move(this, destination, newDir, MoveType.HEAD_ROTATION, calculateWeights));
                 }
@@ -316,7 +319,7 @@ public class Piece : MonoBehaviour
             if (GridManager.AreDirectionsAdjacent(direction, newDir))
             {
                 GridSquare destination = GridManager.SquareInDirection(GetTailLocation(), newDir, length - 1);
-                if (destination != null && !MoveBlockedByPiece(GetTailLocation(), destination, destination, newDir))
+                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(GetTailLocation(), destination, destination, newDir)))
                 {
                     moves.Add(new Move(this, destination, newDir, MoveType.TAIL_ROTATION, calculateWeights));
                 }
@@ -326,11 +329,11 @@ public class Piece : MonoBehaviour
         GridSquare[] dashSquares = GridManager.SquaresInDirection(GetHeadLocation(), direction, 100, false);
         for (int i = 0; i < dashSquares.Length; i++)
         {
-            if (MoveBlockedByPiece(GetHeadLocation(), dashSquares[i], dashSquares[i], direction))
+            if (!includeBlockedByPieces && MoveBlockedByPiece(GetHeadLocation(), dashSquares[i], dashSquares[i], direction))
             {
                 break;
             }
-            else if (dashSquares[i].GetPiece())
+            else if (!includeBlockedByPieces && dashSquares[i].GetPiece())
             {
                 moves.Add(new Move(this, dashSquares[i], direction, MoveType.DASH, calculateWeights));
                 break;

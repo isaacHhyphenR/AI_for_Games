@@ -24,6 +24,7 @@ public class GameManager : MonoBehaviour
 
     static GameManager instance;
 
+    public static int turn = 0;
     private void Awake()
     {
         if(instance != null)
@@ -59,6 +60,7 @@ public class GameManager : MonoBehaviour
         currentPlayer = players[currentPlayerIndex];
         currentPlayer.StartTurn();
         currentPlayerIndicator.color = currentPlayer.GetColor();
+        turn++;
     }
 
     public static void SelectPiece(Piece piece)
@@ -97,6 +99,7 @@ public class GameManager : MonoBehaviour
 
     public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        turn = 0;
         canPlay = true;
     }
 }

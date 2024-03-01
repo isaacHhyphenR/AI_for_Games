@@ -50,9 +50,9 @@ MonoBehaviour:
   AI: 1
   aiTurnTime: 0.25
   aiWinDesire: 100000000
-  aiNotLoseDesire: 10000
-  aiDestroyDesire: 100
-  aiPreservePieceDesire: 100
+  aiNotLoseDesire: 100000
+  aiDestroyDesire: 1000
+  aiPreservePieceDesire: 1000
   aiWeightByTurn:
   - 1
   - 0.5
