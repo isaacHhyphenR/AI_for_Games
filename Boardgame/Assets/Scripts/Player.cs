@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public enum MoveType
@@ -60,17 +59,13 @@ public struct Move
         //Prioritize defending against enemy moves. WILL DEPRIORITIZE MOVES IF CURRENT POSITION IS BETTER DEFENCE
         foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
+            bool moveBlocked = false;
             if(opponentMove.destination == piece.GetHeadLocation() && destination != piece.GetHeadLocation())
             {
                 mods += " stay";
                 weight /= opponentMove.weight;
             }
-            else if(opponentMove.destination == destination)
-            {
-                mods += " preserve";
-                weight *= opponentMove.weight;
-            }
-            else
+            else if (true)
             {
                 //Finds all the intermediate squares that could block the opponent's move
                 GridSquare[] blockingSquares;
@@ -94,6 +89,7 @@ public struct Move
                     {
                         mods += " preserve";
                         weight *= opponentMove.weight;
+                        moveBlocked = true;
                         break;
                     }
                     //If you're already blocking them, don't move
@@ -101,9 +97,21 @@ public struct Move
                     {
                         mods += " stay";
                         weight /= opponentMove.weight;
+                        moveBlocked = true;
+                        break;
+                    }
+                    //If an ally already blocking them, don't bother
+                    else if(square.GetPiece() && square.GetPiece().GetHeadLocation() == square && square.GetPiece().GetOwner() == owner)
+                    {
+                        moveBlocked = true;
                         break;
                     }
                 }
+            }
+            if (!moveBlocked && opponentMove.destination == destination)
+            {
+                mods += " preserve";
+                weight *= opponentMove.weight;
             }
         }
         //Deprioritise moving into enemy fire (working)
@@ -144,10 +152,8 @@ public struct Move
         {
             weight = piece.GetOwner().aiWinDesire;
         }
-        
 
         Debug.Log(piece.gameObject.name + " move to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
-
 
     }
 }
@@ -286,14 +292,15 @@ public class Player : MonoBehaviour
     /// <summary>
     /// Returns a list of every move that this player could make based on the current board state
     /// </summary>
-    /// <param name="loseIfNone"></param>
-    List<Move> FindPotentialMoves(bool calculateWeights, bool includeBlockedByEnemy = false)
+    /// <param name="calculateWeights">If false, leaves all their weights as default. Significantly reduces intensity</param>
+    /// <param name="includeBlockedByPieces">If true, will include moves that other pieces currently block</param>
+    List<Move> FindPotentialMoves(bool calculateWeights, bool includeBlockedByPieces = false)
     {
         //Compiles new list
         List<Move> moves = new List<Move>();
         foreach(Piece piece in pieces)
         {
-            List<Move> pieceMoves = piece.GetAllMoves(calculateWeights, includeBlockedByEnemy);
+            List<Move> pieceMoves = piece.GetAllMoves(calculateWeights, includeBlockedByPieces);
             foreach(Move move in pieceMoves)
             {
                 moves.Add(move);

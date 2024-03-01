@@ -291,22 +291,23 @@ public class Piece : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns all moves this piece can make
+    /// Returns all moves this piece can make from the specified position
     /// </summary>
     /// <param name="calculateWeights">If false, leaves all their weights as default. Significantly reduces intensity</param>
     /// <param name="includeBlockedByPieces">If true, will include moves that other pieces currently block</param>
     /// <returns></returns>
-    public List<Move> GetAllMoves(bool calculateWeights, bool includeBlockedByPieces = false)
+    public List<Move> GetAllMoves(GridSquare startHead, Direction startDirection, bool calculateWeights, bool includeBlockedByPieces = false)
     {
+        GridSquare startTail = GridManager.SquareInDirection(startHead, GridManager.OppositeDirection(startDirection), GetLength() - 1);
         List<Move> moves = new List<Move>();
         //Checks all possible head rotations
         for(int i = 0; i < 4; i++)
         {
             Direction newDir = (Direction)i;
-            if (GridManager.AreDirectionsAdjacent(direction, newDir))
+            if (GridManager.AreDirectionsAdjacent(startDirection, newDir))
             {
-                GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
-                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir)))
+                GridSquare destination = GridManager.SquareInDirection(startHead, newDir, length - 1);
+                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(startHead, destination, startHead, newDir)))
                 {
                     moves.Add(new Move(this, destination, newDir, MoveType.HEAD_ROTATION, calculateWeights));
                 }
@@ -316,35 +317,45 @@ public class Piece : MonoBehaviour
         for (int i = 0; i < 4; i++)
         {
             Direction newDir = (Direction)i;
-            if (GridManager.AreDirectionsAdjacent(direction, newDir))
+            if (GridManager.AreDirectionsAdjacent(startDirection, newDir))
             {
-                GridSquare destination = GridManager.SquareInDirection(GetTailLocation(), newDir, length - 1);
-                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(GetTailLocation(), destination, destination, newDir)))
+                GridSquare destination = GridManager.SquareInDirection(startTail, newDir, length - 1);
+                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(startTail, destination, destination, newDir)))
                 {
                     moves.Add(new Move(this, destination, newDir, MoveType.TAIL_ROTATION, calculateWeights));
                 }
             }
         }
         //Checks all possible dashes
-        GridSquare[] dashSquares = GridManager.SquaresInDirection(GetHeadLocation(), direction, 100, false);
+        GridSquare[] dashSquares = GridManager.SquaresInDirection(startHead, startDirection, 100, false);
         for (int i = 0; i < dashSquares.Length; i++)
         {
-            if (!includeBlockedByPieces && MoveBlockedByPiece(GetHeadLocation(), dashSquares[i], dashSquares[i], direction))
+            if (!includeBlockedByPieces && MoveBlockedByPiece(startHead, dashSquares[i], dashSquares[i], direction))
             {
                 break;
             }
             else if (!includeBlockedByPieces && dashSquares[i].GetPiece())
             {
-                moves.Add(new Move(this, dashSquares[i], direction, MoveType.DASH, calculateWeights));
+                moves.Add(new Move(this, dashSquares[i], startDirection, MoveType.DASH, calculateWeights));
                 break;
             }
             else
             {
-                moves.Add(new Move(this, dashSquares[i], direction, MoveType.DASH, calculateWeights));
+                moves.Add(new Move(this, dashSquares[i], startDirection, MoveType.DASH, calculateWeights));
             }
         }
-        
+
         return moves;
+    }
+    /// <summary>
+    /// Returns all moves the piece can make from its current position
+    /// </summary>
+    /// <param name="calculateWeights">If false, leaves all their weights as default. Significantly reduces intensity</param>
+    /// <param name="includeBlockedByPieces">If true, will include moves that other pieces currently block</param>
+    /// <returns></returns>
+    public List<Move> GetAllMoves(bool calculateWeights, bool includeBlockedByPieces = false)
+    {
+        return GetAllMoves(GetHeadLocation(), direction, calculateWeights, includeBlockedByPieces);
     }
     /// <summary>
     /// Returns whether this piece can make any valid moves
