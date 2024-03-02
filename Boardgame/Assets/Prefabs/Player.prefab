@@ -50,12 +50,13 @@ MonoBehaviour:
   startingX: 020000000000000005000000
   AI: 1
   aiTurnTime: 0.25
-  aiWinDesire: 200000
-  aiNotLoseDesire: 100000
-  aiDestroyDesire: 1000
-  aiPreservePieceDesire: 1000
+  aiWinDesire: 20000
+  aiNotLoseDesire: 10000
+  aiDestroyDesire: 20
+  aiPreservePieceDesire: 20
+  aiFaceOffensivelyDesire: 2
   aiWeightByTurn:
   - 1
   - 0.25
-  - 0.05
-  aiNextTurnAverageWeight: 0.5
+  - 0.1
+  aiNextTurnAverageWeight: 0.1

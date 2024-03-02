@@ -117,22 +117,31 @@ public class Piece : MonoBehaviour
         }
         return false;
     }
+
+
     /// <summary>
     /// Returns true if there is a piece blocking the way
     /// </summary>
-    /// <param name="space"></param>
     /// <returns></returns>
-    bool MoveBlockedByPiece(GridSquare start, GridSquare destination, GridSquare headDestination, Direction direction)
+    bool MoveBlockedByPiece(GridSquare start, GridSquare destination, GridSquare headDestination, Direction direction, Piece exception = null)
+    {
+        return MoveBlockedByPiece(start, destination, headDestination, direction, this, exception);
+    }
+    /// <summary>
+    /// Returns true if there is a piece blocking the way
+    /// </summary>
+    /// <returns></returns>
+    public static bool MoveBlockedByPiece(GridSquare start, GridSquare destination, GridSquare headDestination, Direction direction, Piece piece, Piece exception = null)
     {
         Collision collision = GridManager.FirstPieceEncountered(start, direction, GridManager.DistanceToSquare(start, destination));
         //You can move if there's no piece in the way
-        if (collision.piece == null || collision.piece == this)
+        if (collision.piece == null || collision.piece == piece || collision.piece == exception)
         {
             return false;
         }
         //If there's a piece in the way, you can destroy it if it's a differnet player AND
         //you are not landing on its head AND it's your head landing on it
-        if (collision.piece.GetOwner() != owner &&
+        if (collision.piece.GetOwner() != piece.owner &&
             collision.piece.GetHeadLocation() != collision.square && collision.square == headDestination)
         {
             return false;

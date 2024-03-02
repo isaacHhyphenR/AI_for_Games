@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 
 public enum MoveType
@@ -53,17 +52,20 @@ public struct Move
     public void SetWeights(GridSquare startHead, Direction startDirection, bool recursive = false)
     {
         string mods = "";
-        //Finds all the squares that will have your tail if you make the move
+        bool inHarmsWay = false;
+        bool canDoThatNow = !recursive && CanDoThatNow();
+        //Finds all the squares that will have your tail if you make the move, and those that have your tail when you start this move
         GridSquare[] tailSquares = GridManager.SquaresInDirection(destination, GridManager.OppositeDirection(direction), piece.GetLength() - 1, false);
-        //Finds all the squares that have your tail before you make this move
         GridSquare[] startTailSquares = GridManager.SquaresInDirection(startHead, GridManager.OppositeDirection(startDirection), piece.GetLength() - 1, false);
+        
         //Prioritise moving if you are currently in harms way
         foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
-            if(startTailSquares.Contains(opponentMove.destination))
+            if(startTailSquares.Contains(opponentMove.destination) && !Piece.MoveBlockedByPiece(opponentMove.piece.GetHeadLocation(), opponentMove.destination, opponentMove.destination, opponentMove.direction, opponentMove.piece))
             {
                 //It either yes or no, not mutiplicative of how many there are
                 mods += " escape";
+                inHarmsWay = true;
                 weight *= owner.aiPreservePieceDesire;
                 break;
             }
@@ -96,18 +98,18 @@ public struct Move
                 //Checks if this move would block any of them
                 foreach(GridSquare square in blockingSquares)
                 {
-                    if(square == destination)
-                    {
-                        mods += " preserve";
-                        weight *= opponentMove.weight;
-                        moveBlocked = true;
-                        break;
-                    }
-                    //If you're already blocking them, don't move
-                    else if (square == startHead)
+                    //If you're already blocking them, don't move unless you would die
+                    if (square == startHead && !inHarmsWay)
                     {
                         mods += " stay";
                         weight /= opponentMove.weight;
+                        moveBlocked = true;
+                        break;
+                    }
+                    else if (square == destination && !canDoThatNow)
+                    {
+                        mods += " preserve";
+                        weight *= opponentMove.weight;
                         moveBlocked = true;
                         break;
                     }
@@ -119,19 +121,19 @@ public struct Move
                     }
                 }
             }
-            if (!moveBlocked && opponentMove.destination == destination)
+            if (!canDoThatNow && !moveBlocked && opponentMove.destination == destination)
             {
                 mods += " preserve";
                 weight *= opponentMove.weight;
             }
         }
         //Deprioritise moving into enemy fire
-        foreach (Move opponentMove in owner.GetOpponentMoves())
+        foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
             foreach(GridSquare square in tailSquares)
             {
                 //If the opponent would land on you but is NOT the opponent you would destroy with this move, avoid it
-                if(square == opponentMove.destination && destination.GetPiece() != opponentMove.piece)
+                if(square == opponentMove.destination && destination.GetPiece() != opponentMove.piece && !Piece.MoveBlockedByPiece(opponentMove.piece.GetHeadLocation(), opponentMove.destination, opponentMove.destination, opponentMove.direction, opponentMove.piece, piece))
                 {
                     mods += " avoid";
                     weight /= owner.aiPreservePieceDesire;
@@ -142,13 +144,13 @@ public struct Move
                 }
             }
         }
-        //Prioritize destroying opponent's pieces
-        if(destination.GetPiece() && destination.GetPiece() != piece)
+        //Prioritize destroying opponent's pieces.
+        if (!canDoThatNow && destination.GetPiece() && destination.GetPiece() != piece)
         {
             mods += " destroy";
             weight *= owner.aiDestroyDesire;
             //Prioritise enemy queen
-            if(destination.GetPiece().GetCanWin())
+            if (destination.GetPiece().GetCanWin())
             {
                 weight *= 2;
             }
@@ -158,8 +160,13 @@ public struct Move
                 weight = owner.aiWinDesire;
             }
         }
-        //DEFINATELY prioritise getting your queen to opponent's homerow
-        if (piece.GetCanWin() && destination.GetCoordinates().y == GameManager.GetOtherPlayer(piece.GetOwner()).GetHomeRow())
+        //Prioritise facing the enemy homerow
+        if (GridManager.DirectionBetweenCoordinates(new Coordinate(startHead.GetCoordinates().x, owner.GetHomeRow()), new Coordinate(startHead.GetCoordinates().x, GameManager.GetOtherPlayer(owner).GetHomeRow())) == direction)
+        {
+            weight *= owner.aiFaceOffensivelyDesire;
+        }
+        //DEFINATELY prioritise getting your queen to opponent's homerow. Don't prioritize future moves winning if you could win now
+        if (!canDoThatNow && piece.GetCanWin() && destination.GetCoordinates().y == GameManager.GetOtherPlayer(piece.GetOwner()).GetHomeRow() && !owner.GetPotentialMoves().Contains(this))
         {
             weight = piece.GetOwner().aiWinDesire;
         }
@@ -192,16 +199,32 @@ public struct Move
                 float averageWeight = nextTurnTotalWeight / nextTurnNumMoves;
                 float nextTurnWeight = (averageWeight * owner.aiNextTurnAverageWeight) + (nextTurnMaxWeight * (1 - owner.aiNextTurnAverageWeight));
                 mods += " next(" + nextTurnWeight + ")";
-                weight *= owner.aiWeightByTurn[1] * nextTurnWeight;
+                //Lack of further options should not negate the value of the first move
+                weight += weight * owner.aiWeightByTurn[1] * nextTurnWeight;
             }
         }
 
         //debug logs the result
         if(recursive)
         {
-            Debug.Log(piece.gameObject.name + " move to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
+            Debug.Log(piece.gameObject.name + " " + direction + " to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
         }
 
+    }
+    /// <summary>
+    /// Returns true if this move accomplishes something you could do this turn
+    /// </summary>
+    /// <returns></returns>
+    bool CanDoThatNow()
+    {
+        foreach (Move potentialMove in owner.GetPotentialMoves())
+        {
+            if (potentialMove.destination == destination && potentialMove.piece == piece)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -240,6 +263,8 @@ public class Player : MonoBehaviour
     public float aiDestroyDesire;
     [Tooltip("How much more this AI wants to make a move that will prevent them from losing a piece. Multiplicative")]
     public float aiPreservePieceDesire;
+    [Tooltip("How much more this AI wants to make a move that will point it towards the opponent's homerow. Multiplicative")]
+    public float aiFaceOffensivelyDesire;
     [Tooltip("How much this AI will factor in each turn to the future. Multiplicative")]
     public float[] aiWeightByTurn;
     [Tooltip("How much of the next turn's potential impact is average as opposed to the maximum value")]
@@ -295,7 +320,9 @@ public class Player : MonoBehaviour
         Debug.LogAssertion(GameManager.turn);
         totalMoveWeight = 0;
         opponentMoves = GameManager.GetOtherPlayer(this).FindPotentialMoves(false, true);
-        dangerousOpponentMoves = FindDangerousEnemyMoves(opponentMoves);
+        dangerousOpponentMoves = FindDangerousEnemyMoves();
+        //gets the list once so that when it gets weights, it can rule out redundant moves
+        potentialMoves = FindPotentialMoves(false);
         potentialMoves = FindPotentialMoves(true);
         chosenMove = ChooseRandomMove();
     }
@@ -303,13 +330,14 @@ public class Player : MonoBehaviour
     /// Returns a list of every move the enemy could make that you want to prevent for some reason
     /// </summary>
     /// <returns></returns>
-    List<Move> FindDangerousEnemyMoves(List<Move> potentialMoves)
+    List<Move> FindDangerousEnemyMoves()
     {
-        //List<Move> potentialMoves = GameManager.GetOtherPlayer(this).FindPotentialMoves(false);
-        List<Move> dangerousMoves = new List<Move>();
-        for (int i = 0; i < potentialMoves.Count; i++)
+        //List<Move> opponentPotentialMoves = GameManager.GetOtherPlayer(this).FindPotentialMoves(false);
+        List<Move> opponentPotentialMoves = opponentMoves;
+        List <Move> dangerousMoves = new List<Move>();
+        for (int i = 0; i < opponentPotentialMoves.Count; i++)
         {
-            Move move = potentialMoves[i];
+            Move move = opponentPotentialMoves[i];
             //Try not to let them destroy your pieces
             if (move.destination.GetPiece() && move.destination.GetPiece().GetOwner() == this && move.destination.GetPiece().GetHeadLocation() != move.destination)
             {
@@ -477,5 +505,10 @@ public class Player : MonoBehaviour
     public List<Move> GetOpponentMoves()
     {
         return opponentMoves;
+    }
+
+    public List<Move> GetPotentialMoves()
+    {
+        return potentialMoves;
     }
 }
