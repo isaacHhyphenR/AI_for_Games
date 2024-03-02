@@ -306,10 +306,10 @@ public class Piece : MonoBehaviour
             Direction newDir = (Direction)i;
             if (GridManager.AreDirectionsAdjacent(startDirection, newDir))
             {
-                GridSquare destination = GridManager.SquareInDirection(startHead, newDir, length - 1);
-                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(startHead, destination, startHead, newDir)))
+                GridSquare destination = GridManager.SquareInDirection(startHead, GridManager.OppositeDirection(newDir), length - 1);
+                if (destination != null && (includeBlockedByPieces || !MoveBlockedByPiece(startHead, destination, startHead, GridManager.OppositeDirection(newDir))))
                 {
-                    moves.Add(new Move(this, destination, newDir, MoveType.HEAD_ROTATION, calculateWeights));
+                    moves.Add(new Move(this, startHead, newDir, MoveType.HEAD_ROTATION, calculateWeights));
                 }
             }
         }
@@ -369,8 +369,8 @@ public class Piece : MonoBehaviour
             Direction newDir = (Direction)i;
             if (GridManager.AreDirectionsAdjacent(direction, newDir))
             {
-                GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), newDir, length - 1);
-                if (!(destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), newDir)))
+                GridSquare destination = GridManager.SquareInDirection(GetHeadLocation(), GridManager.OppositeDirection(newDir), length - 1);
+                if (destination != null && !MoveBlockedByPiece(GetHeadLocation(), destination, GetHeadLocation(), GridManager.OppositeDirection(newDir)))
                 {
                     return true;
                 }

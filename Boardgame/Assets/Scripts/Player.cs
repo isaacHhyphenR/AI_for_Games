@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 public enum MoveType
@@ -43,13 +44,23 @@ public struct Move
     /// <param name="recursive">If true, will consider the moves that the piece could make next turn</param>
     public void SetWeights(bool recursive = false)
     {
+        SetWeights(piece.GetHeadLocation(), piece.GetDirection(), recursive);
+    }
+    /// <summary>
+    /// Calculates the AI's desire to perform this move
+    /// </summary>
+    /// <param name="recursive">If true, will consider the moves that the piece could make next turn</param>
+    public void SetWeights(GridSquare startHead, Direction startDirection, bool recursive = false)
+    {
         string mods = "";
         //Finds all the squares that will have your tail if you make the move
         GridSquare[] tailSquares = GridManager.SquaresInDirection(destination, GridManager.OppositeDirection(direction), piece.GetLength() - 1, false);
+        //Finds all the squares that have your tail before you make this move
+        GridSquare[] startTailSquares = GridManager.SquaresInDirection(startHead, GridManager.OppositeDirection(startDirection), piece.GetLength() - 1, false);
         //Prioritise moving if you are currently in harms way
-        foreach(Move opponentMove in owner.GetDangerousOpponentMoves())
+        foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
-            if(opponentMove.destination.GetPiece() == piece && piece.GetHeadLocation() != opponentMove.destination)
+            if(startTailSquares.Contains(opponentMove.destination))
             {
                 //It either yes or no, not mutiplicative of how many there are
                 mods += " escape";
@@ -61,7 +72,7 @@ public struct Move
         foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
             bool moveBlocked = false;
-            if(opponentMove.destination == piece.GetHeadLocation() && destination != piece.GetHeadLocation())
+            if(opponentMove.destination == startHead && destination != startHead)
             {
                 mods += " stay";
                 weight /= opponentMove.weight;
@@ -93,7 +104,7 @@ public struct Move
                         break;
                     }
                     //If you're already blocking them, don't move
-                    else if (square == piece.GetHeadLocation())
+                    else if (square == startHead)
                     {
                         mods += " stay";
                         weight /= opponentMove.weight;
@@ -101,7 +112,7 @@ public struct Move
                         break;
                     }
                     //If an ally already blocking them, don't bother
-                    else if(square.GetPiece() && square.GetPiece().GetHeadLocation() == square && square.GetPiece().GetOwner() == owner)
+                    else if(square.GetPiece() && square.GetPiece().GetHeadLocation() == square && square.GetPiece().GetOwner() == owner && square.GetPiece() != piece)
                     {
                         moveBlocked = true;
                         break;
@@ -114,7 +125,7 @@ public struct Move
                 weight *= opponentMove.weight;
             }
         }
-        //Deprioritise moving into enemy fire (working)
+        //Deprioritise moving into enemy fire
         foreach (Move opponentMove in owner.GetOpponentMoves())
         {
             foreach(GridSquare square in tailSquares)
@@ -131,7 +142,7 @@ public struct Move
                 }
             }
         }
-        //Prioritize destroying opponent's pieces (working)
+        //Prioritize destroying opponent's pieces
         if(destination.GetPiece() && destination.GetPiece() != piece)
         {
             mods += " destroy";
@@ -147,7 +158,7 @@ public struct Move
                 weight = owner.aiWinDesire;
             }
         }
-        //DEFINATELY prioritise getting your queen to opponent's homerow (working)
+        //DEFINATELY prioritise getting your queen to opponent's homerow
         if (piece.GetCanWin() && destination.GetCoordinates().y == GameManager.GetOtherPlayer(piece.GetOwner()).GetHomeRow())
         {
             weight = piece.GetOwner().aiWinDesire;
@@ -162,7 +173,12 @@ public struct Move
             List<Move> nextTurnMoves = piece.GetAllMoves(destination, direction, false);
             foreach(Move move in nextTurnMoves)
             {
-                move.SetWeights(false);
+                //Accessing your current position or your current move shouldn't be bonuses for the next move
+                if((move.destination == destination && move.direction == direction) || (move.destination == piece.GetHeadLocation() && move.direction == piece.GetDirection()))
+                {
+                    continue;
+                }
+                move.SetWeights(destination,direction,false);
                 nextTurnNumMoves++;
                 nextTurnTotalWeight += move.weight;
                 if(move.weight > nextTurnMaxWeight)
@@ -174,9 +190,13 @@ public struct Move
             if(nextTurnNumMoves != 0)
             {
                 float averageWeight = nextTurnTotalWeight / nextTurnNumMoves;
-                weight *= owner.aiWeightByTurn[1] * (averageWeight * owner.aiNextTurnAverageWeight) + (nextTurnMaxWeight * (1 - owner.aiNextTurnAverageWeight));
+                float nextTurnWeight = (averageWeight * owner.aiNextTurnAverageWeight) + (nextTurnMaxWeight * (1 - owner.aiNextTurnAverageWeight));
+                mods += " next(" + nextTurnWeight + ")";
+                weight *= owner.aiWeightByTurn[1] * nextTurnWeight;
             }
         }
+
+        //debug logs the result
         if(recursive)
         {
             Debug.Log(piece.gameObject.name + " move to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
