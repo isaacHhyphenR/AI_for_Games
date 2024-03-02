@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 public enum MoveType
@@ -49,7 +50,7 @@ public struct Move
     /// Calculates the AI's desire to perform this move
     /// </summary>
     /// <param name="recursive">If true, will consider the moves that the piece could make next turn</param>
-    public void SetWeights(GridSquare startHead, Direction startDirection, bool recursive = false)
+    public string SetWeights(GridSquare startHead, Direction startDirection, bool recursive = false)
     {
         string mods = "";
         bool inHarmsWay = false;
@@ -73,6 +74,7 @@ public struct Move
         //Prioritize defending against enemy moves. WILL DEPRIORITIZE MOVES IF CURRENT POSITION IS BETTER DEFENCE
         foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
+            bool canBlockNow = false;
             bool moveBlocked = false;
             if(opponentMove.destination == startHead && destination != startHead)
             {
@@ -95,8 +97,9 @@ public struct Move
                 {
                     blockingSquares = GridManager.SquaresInDirection(opponentMove.piece.GetHeadLocation(), opponentMove.direction, GridManager.DistanceToSquare(opponentMove.piece.GetHeadLocation(),opponentMove.destination), false);
                 }
+                canBlockNow = !recursive && CanBlockNow(blockingSquares);
                 //Checks if this move would block any of them
-                foreach(GridSquare square in blockingSquares)
+                foreach (GridSquare square in blockingSquares)
                 {
                     //If you're already blocking them, don't move unless you would die
                     if (square == startHead && !inHarmsWay)
@@ -106,9 +109,9 @@ public struct Move
                         moveBlocked = true;
                         break;
                     }
-                    else if (square == destination && !canDoThatNow)
+                    else if (!canBlockNow && square == destination)
                     {
-                        mods += " preserve";
+                        mods += " preserve(" + opponentMove.weight + ")";
                         weight *= opponentMove.weight;
                         moveBlocked = true;
                         break;
@@ -121,14 +124,14 @@ public struct Move
                     }
                 }
             }
-            if (!canDoThatNow && !moveBlocked && opponentMove.destination == destination)
+            if (!canBlockNow && !moveBlocked && opponentMove.destination == destination)
             {
-                mods += " preserve";
+                mods += " preserve(" + opponentMove.weight + ")";
                 weight *= opponentMove.weight;
             }
         }
         //Deprioritise moving into enemy fire
-        foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
+        foreach (Move opponentMove in owner.GetOpponentMoves())
         {
             foreach(GridSquare square in tailSquares)
             {
@@ -171,7 +174,8 @@ public struct Move
             weight = piece.GetOwner().aiWinDesire;
         }
         //Consider the value of next turn's moves. Partially decided by average, partially by highest value move
-        if(recursive)
+        string nextMods = "";
+        if (recursive)
         {
             //Calculates the weight of all next turn moves
             int nextTurnNumMoves = 0;
@@ -180,17 +184,14 @@ public struct Move
             List<Move> nextTurnMoves = piece.GetAllMoves(destination, direction, false);
             foreach(Move move in nextTurnMoves)
             {
-                //Accessing your current position or your current move shouldn't be bonuses for the next move
-                if((move.destination == destination && move.direction == direction) || (move.destination == piece.GetHeadLocation() && move.direction == piece.GetDirection()))
-                {
-                    continue;
-                }
-                move.SetWeights(destination,direction,false);
+                string thisMod = move.SetWeights(destination,direction,false);
                 nextTurnNumMoves++;
                 nextTurnTotalWeight += move.weight;
                 if(move.weight > nextTurnMaxWeight)
                 {
                     nextTurnMaxWeight = move.weight;
+                    if(thisMod != "")
+                        nextMods += "\n" + thisMod;
                 }
             }
             //translates that into weight for this turn
@@ -207,8 +208,10 @@ public struct Move
         //debug logs the result
         if(recursive)
         {
-            Debug.Log(piece.gameObject.name + " " + direction + " to " + destination.gameObject.name + ". Weight: " + weight + mods + "  (" + GameManager.turn + ")");
+            Debug.Log(piece.gameObject.name + " " + direction + " to " + destination.gameObject.name + ". Weight: " + weight + mods + nextMods + "\n  (" + GameManager.turn + ")");
         }
+
+        return mods;
 
     }
     /// <summary>
@@ -222,6 +225,22 @@ public struct Move
             if (potentialMove.destination == destination && potentialMove.piece == piece)
             {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    //Checks whether there's a more direct move to block this move
+    bool CanBlockNow(GridSquare[] squaresToBlock)
+    {
+        foreach (GridSquare square in squaresToBlock)
+        {
+            foreach (Move potentialMove in owner.GetPotentialMoves())
+            {
+                if (potentialMove.destination == square && potentialMove.piece == piece)
+                {
+                    return true;
+                }
             }
         }
         return false;
