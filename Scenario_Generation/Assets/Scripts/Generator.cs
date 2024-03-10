@@ -16,7 +16,8 @@ public class Generator : MonoBehaviour
                 Vector3 newPos = new Vector3(x * terrainSize - offset.x, 0, y * - terrainSize - offset.y);
                 TerrainSector newSquare = Instantiate(terrainPrefab, newPos, Quaternion.identity).GetComponent<TerrainSector>();
                 newSquare.gameObject.name = x + "," + y + ": ";
-                newSquare.SetTerrain(baseMap.GetPixel(x, baseMap.height - y));
+                Color pixel = baseMap.GetPixel(x, baseMap.height - y);
+                newSquare.SetTerrain(new TerrainValues(pixel.r, pixel.g, pixel.b));
                 newSquare.transform.SetParent(transform, false);
             }
         }

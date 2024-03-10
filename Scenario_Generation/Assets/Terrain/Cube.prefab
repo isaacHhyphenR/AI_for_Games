@@ -121,10 +121,11 @@ MonoBehaviour:
   visualComponent: {fileID: 3756618270884757642}
   maxHeight: 10
   minHeight: 0.5
-  waterValue: 0.355
-  mountainValue: 0.55
-  snowValue: 0.72
-  water: {fileID: 2100000, guid: 5262b4433fd4e924bb1fd304151a659f, type: 2}
-  snow: {fileID: 2100000, guid: 467113ad88ce64d42883e7dad056a1ab, type: 2}
-  mountain: {fileID: 2100000, guid: 6da779863c9557e4885a5c55d0c98062, type: 2}
-  grass: {fileID: 2100000, guid: eeb286641aabd2a47af23b75fc8672f3, type: 2}
+  mountain: {fileID: 1080356333898736104, guid: 797e2ef9338ac1541a6e2cb0135ae76f, type: 3}
+  snowcapMountain: {fileID: 3460168021280211682, guid: 27819a7f5ea30bd489435dc2cf977119, type: 3}
+  desertMountain: {fileID: 8503346719010452919, guid: a1b33b01218584b41ac2bbd9a262931e, type: 3}
+  grass: {fileID: 2851408464808812362, guid: c7d9fc4e6de4bed488b7ebcac616c412, type: 3}
+  ocean: {fileID: 496349204670212744, guid: 41aa1329ace790a4aac37a5e36e62ae3, type: 3}
+  jungle: {fileID: 390957247762389476, guid: 286f3fd9248f35d44acdadb9b45a2404, type: 3}
+  desert: {fileID: 9148191057074570773, guid: 826575aa8309d354dbf0f65a956da13d, type: 3}
+  tundra: {fileID: 3087221482816526628, guid: 87a068837e4e4584fab83ee75c5fc119, type: 3}

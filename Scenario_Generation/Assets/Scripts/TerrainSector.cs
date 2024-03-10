@@ -1,46 +1,62 @@
 using UnityEngine;
 
+
 public class TerrainSector : MonoBehaviour
 {
     [SerializeField] Renderer visualComponent;
     [SerializeField] float maxHeight;
     [SerializeField] float minHeight;
-    [Tooltip("Any pixel with less lightness will be water")]
-    [SerializeField] float waterValue;
-    [Tooltip("Any pixel with more lightness will be mountain")]
-    [SerializeField] float mountainValue;
-    [Tooltip("Any pixel with more lightness will be snowcap")]
-    [SerializeField] float snowValue;
-    [SerializeField] Material water;
-    [SerializeField] Material snow;
-    [SerializeField] Material mountain;
-    [SerializeField] Material grass;
+    [SerializeField] Terrain mountain;
+    [SerializeField] Terrain snowcapMountain;
+    [SerializeField] Terrain desertMountain;
+    [SerializeField] Terrain grass;
+    [SerializeField] Terrain ocean;
+    [SerializeField] Terrain jungle;
+    [SerializeField] Terrain desert;
+    [SerializeField] Terrain tundra;
 
 
-    public void SetTerrain(Color value)
+    public void SetTerrain(TerrainValues value)
     {
-        float height = value.r * maxHeight + minHeight;
+        float height = value.a * maxHeight + minHeight;
         transform.localScale = new Vector3(transform.localScale.x, height, transform.localScale.z);
         transform.position = new Vector3(transform.position.x, height/2, transform.position.z);
-        if(value.r < waterValue)
+        if(value.m > ocean.moisture)
         {
-            visualComponent.material = water;
-            gameObject.name = gameObject.name + "water";
+            ocean.ApplyTerrain(this);
         }
-        else if (value.r > snowValue)
+        else if ((value.a > snowcapMountain.altitude && value.t < snowcapMountain.temperature) || (value.a > mountain.altitude && value.t < tundra.temperature))
         {
-            visualComponent.material = snow;
-            gameObject.name = gameObject.name + "snow";
+            snowcapMountain.ApplyTerrain(this);
         }
-        else if (value.r > mountainValue)
+        else if ((value.a > desertMountain.altitude && value.t > desertMountain.temperature) || (value.a > mountain.altitude && value.t > desert.temperature))
         {
-            visualComponent.material = mountain;
-            gameObject.name = gameObject.name + "mountain";
+            desertMountain.ApplyTerrain(this);
+        }
+        else if (value.a > mountain.altitude)
+        {
+            mountain.ApplyTerrain(this);
+        }
+        else if (value.t > jungle.temperature && value.m > jungle.moisture)
+        {
+            jungle.ApplyTerrain(this);
+        }
+        else if (value.t > desert.temperature && value.m < desert.moisture)
+        {
+            desert.ApplyTerrain(this);
+        }
+        else if (value.t < tundra.temperature)
+        {
+            tundra.ApplyTerrain(this);
         }
         else
         {
-            visualComponent.material = grass;
-            gameObject.name = gameObject.name + "grass";
+            grass.ApplyTerrain(this);
         }
+    }
+
+    public Renderer GetRenderer()
+    {
+        return visualComponent;
     }
 }
