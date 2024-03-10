@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 9072313684656985333}
   - component: {fileID: 3756618270884757642}
   - component: {fileID: 4602067693495336349}
+  - component: {fileID: -2010965473168175519}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -105,3 +106,25 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-2010965473168175519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8864232739995419106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f36998769e4d304e8db088396a0f9de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visualComponent: {fileID: 3756618270884757642}
+  maxHeight: 10
+  minHeight: 0.5
+  waterValue: 0.355
+  mountainValue: 0.55
+  snowValue: 0.72
+  water: {fileID: 2100000, guid: 5262b4433fd4e924bb1fd304151a659f, type: 2}
+  snow: {fileID: 2100000, guid: 467113ad88ce64d42883e7dad056a1ab, type: 2}
+  mountain: {fileID: 2100000, guid: 6da779863c9557e4885a5c55d0c98062, type: 2}
+  grass: {fileID: 2100000, guid: eeb286641aabd2a47af23b75fc8672f3, type: 2}
