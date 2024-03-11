@@ -1,25 +1,70 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Generator : MonoBehaviour
 {
-    [SerializeField] Texture2D baseMap;
-    [SerializeField] GameObject terrainPrefab;
-    float terrainSize;
+    [Tooltip("If True, will generate using the texture. If False, will generate using random noise.")]
+    [SerializeField] bool useTexture;
+    [SerializeField] GameObject sectorPrefab;
+    float sectorSize;
+    [Header("Texture Generation")]
+    [Tooltip("Texture used to generate the Temperature, Altitude, and Moisture of the map.")]
+    [SerializeField] Texture2D texture;
+    [Header("Noise Generation")]
+    [SerializeField] Vector2 dimensions;
+    [SerializeField] float frequency;
+
     private void Start()
     {
-        terrainSize = terrainPrefab.transform.localScale.x;
-        Vector2 offset = new Vector2(terrainSize * baseMap.width / 2, - terrainSize * baseMap.height / 2);
-        for (int x = 0; x < baseMap.width; x++)
+        if(useTexture)
         {
-            for (int y = 0; y < baseMap.height; y++)
+            GenerateFromTexture();
+        }
+        else
+        {
+            GenerateFromNoise();
+        }
+    }
+
+
+
+    void GenerateFromNoise()
+    {
+        Perlin.Init();
+        sectorSize = sectorPrefab.transform.localScale.x;
+        Vector2 offset = new Vector2(sectorSize * texture.width / 2, -sectorSize * texture.height / 2);
+        for (int x = 0; x < dimensions.x; x++)
+        {
+            for(int y = 0; y < dimensions.y; y++)
             {
-                Vector3 newPos = new Vector3(x * terrainSize - offset.x, 0, y * - terrainSize - offset.y);
-                TerrainSector newSquare = Instantiate(terrainPrefab, newPos, Quaternion.identity).GetComponent<TerrainSector>();
-                newSquare.gameObject.name = x + "," + y + ": ";
-                Color pixel = baseMap.GetPixel(x, baseMap.height - y);
-                newSquare.SetTerrain(new TerrainValues(pixel.r, pixel.g, pixel.b));
-                newSquare.transform.SetParent(transform, false);
+                //float noise = Perlin.noise(x + Random.Range(0f,1f), y + Random.Range(0.1f, 0.9f));
+                float noise = Mathf.Abs(Perlin.noise((x/dimensions.x - 0.5f) * frequency, (y / dimensions.x - 0.5f) * frequency));
+                GenerateSector(new TerrainValues(noise, noise, noise), x, y, offset);
+                //Debug.Log(noise);
             }
         }
+    }
+
+    void GenerateFromTexture()
+    {
+        sectorSize = sectorPrefab.transform.localScale.x;
+        Vector2 offset = new Vector2(sectorSize * texture.width / 2, - sectorSize * texture.height / 2);
+        for (int x = 0; x < texture.width; x++)
+        {
+            for (int y = 0; y < texture.height; y++)
+            {
+                Color pixel = texture.GetPixel(x, texture.height - y);
+                GenerateSector(new TerrainValues(pixel.r, pixel.g, pixel.b), x, y, offset);
+            }
+        }
+    }
+
+    void GenerateSector(TerrainValues data, int x, int y, Vector2 offset)
+    {
+        Vector3 newPos = new Vector3(x * sectorSize - offset.x, 0, y * -sectorSize - offset.y);
+        TerrainSector newSquare = Instantiate(sectorPrefab, newPos, Quaternion.identity).GetComponent<TerrainSector>();
+        newSquare.gameObject.name = x + "," + y + ": ";
+        newSquare.SetTerrain(data,true);
+        newSquare.transform.SetParent(transform, false);
     }
 }

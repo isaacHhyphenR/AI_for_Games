@@ -16,6 +16,11 @@ public class TerrainSector : MonoBehaviour
     [SerializeField] Terrain tundra;
 
 
+    public void SetTerrain(TerrainValues value, bool bw)
+    {
+        visualComponent.material.color = new Color(value.t, value.a, value.m);
+    }
+
     public void SetTerrain(TerrainValues value)
     {
         float height = value.a * maxHeight + minHeight;
