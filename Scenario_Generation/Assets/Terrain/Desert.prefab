@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f3a4979f40dcc34ea4435c94d3b8e59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  temperature: 0.5
+  temperature: 0.75
   moisture: 0.3
   altitude: 0
   material: {fileID: 2100000, guid: f6486ce3a88246348a6e50c2aa456890, type: 2}

@@ -62,7 +62,7 @@ public class Perlin : MonoBehaviour
     /// <param name="x"></param>
     /// <param name="y"></param>
     /// <returns></returns>
-    public static float noise(float x, float y, int octaves = 1)
+    public static float noise(float x, float y, int octaves = 1, int seed = 0)
     {
         float result = 0;
         int cell_x = (int)Mathf.Floor(x);
@@ -71,7 +71,7 @@ public class Perlin : MonoBehaviour
         {
             for (int grid_x = cell_x; grid_x <= cell_x + 1; ++grid_x)
             {
-                int hash = permutation[(permutation[grid_x & MASK] + grid_y) & MASK];
+                int hash = permutation[(permutation[grid_x & MASK] + grid_y + seed) & MASK];
                 result += surflet(x - grid_x, y - grid_y, grads_x[hash], grads_y[hash]);
             }
         }
