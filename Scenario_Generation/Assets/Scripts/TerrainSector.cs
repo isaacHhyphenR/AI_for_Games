@@ -18,7 +18,14 @@ public class TerrainSector : MonoBehaviour
 
     public void SetTerrain(TerrainValues value, bool bw)
     {
-        visualComponent.material.color = new Color(value.t, value.a, value.m);
+        if(bw)
+        {
+            visualComponent.material.color = new Color(value.t, value.a, value.m);
+        }
+        else
+        {
+            SetTerrain(value);
+        }
     }
 
     public void SetTerrain(TerrainValues value)

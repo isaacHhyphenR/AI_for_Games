@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class Generator : MonoBehaviour
 {
@@ -13,6 +12,8 @@ public class Generator : MonoBehaviour
     [Header("Noise Generation")]
     [SerializeField] Vector2 dimensions;
     [SerializeField] float frequency;
+    [SerializeField] int octaves;
+    [SerializeField] bool flatGreyscale;
 
     private void Start()
     {
@@ -37,8 +38,7 @@ public class Generator : MonoBehaviour
         {
             for(int y = 0; y < dimensions.y; y++)
             {
-                //float noise = Perlin.noise(x + Random.Range(0f,1f), y + Random.Range(0.1f, 0.9f));
-                float noise = Mathf.Abs(Perlin.noise((x/dimensions.x - 0.5f) * frequency, (y / dimensions.x - 0.5f) * frequency));
+                float noise = Mathf.Abs(Perlin.noise((x/dimensions.x ) * frequency, (y / dimensions.x - 0.5f) * frequency, octaves));
                 GenerateSector(new TerrainValues(noise, noise, noise), x, y, offset);
                 //Debug.Log(noise);
             }
@@ -64,7 +64,7 @@ public class Generator : MonoBehaviour
         Vector3 newPos = new Vector3(x * sectorSize - offset.x, 0, y * -sectorSize - offset.y);
         TerrainSector newSquare = Instantiate(sectorPrefab, newPos, Quaternion.identity).GetComponent<TerrainSector>();
         newSquare.gameObject.name = x + "," + y + ": ";
-        newSquare.SetTerrain(data,true);
+        newSquare.SetTerrain(data, flatGreyscale);
         newSquare.transform.SetParent(transform, false);
     }
 }

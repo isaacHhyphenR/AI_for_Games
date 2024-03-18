@@ -334,6 +334,8 @@ MonoBehaviour:
   texture: {fileID: 2800000, guid: 7d99cbc0db832e342b62f22c75b56112, type: 3}
   dimensions: {x: 100, y: 100}
   frequency: 10
+  octaves: 25
+  flatGreyscale: 0
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
