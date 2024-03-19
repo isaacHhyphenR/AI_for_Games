@@ -67,6 +67,43 @@ public class TerrainSector : MonoBehaviour
         }
     }
 
+    public Color GetTerrainColor(TerrainValues value)
+    {
+        float height = value.a * maxHeight + minHeight;
+        if (value.m > ocean.moisture)
+        {
+            return ocean.GetColor();
+        }
+        else if ((value.a > snowcapMountain.altitude && value.t < snowcapMountain.temperature) || (value.a > mountain.altitude && value.t < tundra.temperature))
+        {
+            return snowcapMountain.GetColor();
+        }
+        else if ((value.a > desertMountain.altitude && value.t > desertMountain.temperature) || (value.a > mountain.altitude && value.t > desert.temperature))
+        {
+            return desertMountain.GetColor();
+        }
+        else if (value.a > mountain.altitude)
+        {
+            return mountain.GetColor();
+        }
+        else if (value.t > jungle.temperature && value.m > jungle.moisture)
+        {
+            return jungle.GetColor();
+        }
+        else if (value.t > desert.temperature && value.m < desert.moisture)
+        {
+            return desert.GetColor();
+        }
+        else if (value.t < tundra.temperature)
+        {
+            return tundra.GetColor();
+        }
+        else
+        {
+            return grass.GetColor();
+        }
+    }
+
     public Renderer GetRenderer()
     {
         return visualComponent;

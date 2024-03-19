@@ -33,4 +33,9 @@ public class Terrain : MonoBehaviour
         }
         sector.gameObject.name = sector.gameObject.name + gameObject.name;
     }
+
+    public Color GetColor()
+    {
+        return material.color;
+    }
 }

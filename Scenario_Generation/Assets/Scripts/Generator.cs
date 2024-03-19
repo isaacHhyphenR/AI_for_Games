@@ -1,3 +1,4 @@
+using UnityEditor.TerrainTools;
 using UnityEngine;
 
 public class Generator : MonoBehaviour
@@ -10,7 +11,19 @@ public class Generator : MonoBehaviour
     [SerializeField] MeshFilter meshFilter;
     Vector3[] vertices;
     Vector2[] uv;
+    Color[] colors;
     int[] triangles;
+    [Header("Terrain Info")]
+    [SerializeField] float maxHeight;
+    [SerializeField] Terrain mountain;
+    [SerializeField] Terrain snowcapMountain;
+    [SerializeField] Terrain desertMountain;
+    [SerializeField] Terrain grass;
+    [SerializeField] Terrain ocean;
+    [SerializeField] Terrain jungle;
+    [SerializeField] Terrain desert;
+    [SerializeField] Terrain tundra;
+    [Header("")]
     [Header("Texture Generation")]
     [Tooltip("Texture used to generate the Temperature, Altitude, and Moisture of the map.")]
     [SerializeField] Texture2D texture;
@@ -36,8 +49,10 @@ public class Generator : MonoBehaviour
 
     void GenerateFromNoise()
     {
-        vertices = new Vector3[(int)dimensions.x * (int)dimensions.y];
-        uv = new Vector2[(int)dimensions.x * (int)dimensions.y];
+        int numVertices = (int)dimensions.x * (int)dimensions.y;
+        vertices = new Vector3[numVertices];
+        uv = new Vector2[numVertices];
+        colors = new Color[numVertices];
         triangles = new int[(int)((dimensions.x - 1) * (dimensions.x - 1) * 6)];
 
         Perlin.Init();
@@ -53,16 +68,17 @@ public class Generator : MonoBehaviour
                 float moistureNoise = Mathf.Abs(Perlin.noise((x / dimensions.x) * frequency, (y / dimensions.x - 0.5f) * frequency, octaves, 15));
 
                 //GenerateSector(new TerrainValues(y/dimensions.y, heightNoise, moistureNoise), x, y, offset);
-                vertices[currentIndex] = new Vector3(x, heightNoise, y);
+                vertices[currentIndex] = new Vector3(x - offset.x, heightNoise * maxHeight, -y - offset.y);
                 uv[currentIndex] = new Vector2(x/dimensions.x,y/dimensions.y);
-                if(x < dimensions.x - 1 && y < dimensions.x - 1)
+                colors[currentIndex] = GetTerrainColor(new TerrainValues(y / dimensions.y, heightNoise, moistureNoise));
+                if (x < dimensions.x - 1 && y < dimensions.x - 1)
                 {
                     triangles[triangleIndex++] = currentIndex;
+                    triangles[triangleIndex++] = currentIndex + 1 + (int)dimensions.x;
                     triangles[triangleIndex++] = currentIndex + 1;
-                    triangles[triangleIndex++] = currentIndex + 1 + (int)dimensions.x;
                     triangles[triangleIndex++] = currentIndex;
-                    triangles[triangleIndex++] = currentIndex + 1 + (int)dimensions.x;
                     triangles[triangleIndex++] = currentIndex + (int)dimensions.x;
+                    triangles[triangleIndex++] = currentIndex + 1 + (int)dimensions.x;
                 }
                 currentIndex++;
             }
@@ -74,6 +90,7 @@ public class Generator : MonoBehaviour
         mesh.vertices = vertices;
         mesh.uv = uv;
         mesh.triangles = triangles;
+        mesh.SetColors(colors);
     }
 
     void GenerateFromTexture()
@@ -97,5 +114,42 @@ public class Generator : MonoBehaviour
         newSquare.gameObject.name = x + "," + y + ": ";
         newSquare.SetTerrain(data, flatGreyscale);
         newSquare.transform.SetParent(transform, false);
+    }
+
+
+    Color GetTerrainColor(TerrainValues value)
+    {
+        if (value.m > ocean.moisture)
+        {
+            return ocean.GetColor();
+        }
+        else if ((value.a > snowcapMountain.altitude && value.t < snowcapMountain.temperature) || (value.a > mountain.altitude && value.t < tundra.temperature))
+        {
+            return snowcapMountain.GetColor();
+        }
+        else if ((value.a > desertMountain.altitude && value.t > desertMountain.temperature) || (value.a > mountain.altitude && value.t > desert.temperature))
+        {
+            return desertMountain.GetColor();
+        }
+        else if (value.a > mountain.altitude)
+        {
+            return mountain.GetColor();
+        }
+        else if (value.t > jungle.temperature && value.m > jungle.moisture)
+        {
+            return jungle.GetColor();
+        }
+        else if (value.t > desert.temperature && value.m < desert.moisture)
+        {
+            return desert.GetColor();
+        }
+        else if (value.t < tundra.temperature)
+        {
+            return tundra.GetColor();
+        }
+        else
+        {
+            return grass.GetColor();
+        }
     }
 }
