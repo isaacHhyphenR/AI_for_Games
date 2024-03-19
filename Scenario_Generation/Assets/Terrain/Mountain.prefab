@@ -49,4 +49,3 @@ MonoBehaviour:
   altitude: 0.55
   material: {fileID: 2100000, guid: 6da779863c9557e4885a5c55d0c98062, type: 2}
   entities: {fileID: 0}
-  terrainName: Mountain

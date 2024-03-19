@@ -45,8 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   temperature: 0.75
-  moisture: 0.5
+  moisture: 0.4
   altitude: 0
   material: {fileID: 2100000, guid: 3e7207c76c92d014da3dc930ec1f0b5f, type: 2}
-  entities: {fileID: 0}
-  terrainName: Desert Mountain
+  entities: {fileID: 3626851024029300777, guid: 06acfb774a5fc604a8881a0c3ab058f4, type: 3}

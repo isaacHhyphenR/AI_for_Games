@@ -331,9 +331,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fef794ed4699abc4f8ce70c304c9344a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTexture: 1
+  useTexture: 0
   meshFilter: {fileID: 912302411}
-  sectorSize: 0.5
+  sectorSize: 0.1
   maxHeight: 5
   mountain: {fileID: 1080356333898736104, guid: 797e2ef9338ac1541a6e2cb0135ae76f, type: 3}
   snowcapMountain: {fileID: 3460168021280211682, guid: 27819a7f5ea30bd489435dc2cf977119, type: 3}
@@ -344,10 +344,9 @@ MonoBehaviour:
   desert: {fileID: 9148191057074570773, guid: 826575aa8309d354dbf0f65a956da13d, type: 3}
   tundra: {fileID: 3087221482816526628, guid: 87a068837e4e4584fab83ee75c5fc119, type: 3}
   texture: {fileID: 2800000, guid: 7d99cbc0db832e342b62f22c75b56112, type: 3}
-  meshDimensions: {x: 100, y: 100}
-  frequency: 10
-  octaves: 3
-  flatGreyscale: 0
+  meshDimensions: {x: 500, y: 500}
+  frequency: 5
+  octaves: 8
 --- !u!33 &912302411
 MeshFilter:
   m_ObjectHideFlags: 0

@@ -1,4 +1,3 @@
-using UnityEditor.TerrainTools;
 using UnityEngine;
 
 public class Generator : MonoBehaviour
@@ -18,15 +17,13 @@ public class Generator : MonoBehaviour
     [SerializeField] Terrain jungle;
     [SerializeField] Terrain desert;
     [SerializeField] Terrain tundra;
-    [Header("")]
-    [Header("Texture Generation")]
+    [Header("Texture Based Generation")]
     [Tooltip("Texture used to generate the Temperature, Altitude, and Moisture of the map.")]
     [SerializeField] Texture2D texture;
-    [Header("Noise Generation")]
+    [Header("Noise Based Generation")]
     [SerializeField] Vector2 meshDimensions;
     [SerializeField] float frequency;
     [SerializeField] int octaves;
-    [SerializeField] bool flatGreyscale;
 
 
     private void Start()
@@ -102,6 +99,7 @@ public class Generator : MonoBehaviour
     void GenerateMesh(Vector3[] vertices, Vector2[] uv, int[] triangles, Color[] colors)
     {
         Mesh mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         meshFilter.mesh = mesh;
         mesh.SetVertices(vertices);
         mesh.SetUVs(2, uv);

@@ -46,6 +46,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   temperature: 0.45
   moisture: 0
-  altitude: 0.7
+  altitude: 0.75
   material: {fileID: 2100000, guid: 467113ad88ce64d42883e7dad056a1ab, type: 2}
   entities: {fileID: 0}

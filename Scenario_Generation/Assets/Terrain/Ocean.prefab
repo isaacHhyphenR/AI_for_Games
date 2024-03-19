@@ -49,4 +49,3 @@ MonoBehaviour:
   altitude: 0
   material: {fileID: 2100000, guid: 5262b4433fd4e924bb1fd304151a659f, type: 2}
   entities: {fileID: 0}
-  terrainName: Ocean
