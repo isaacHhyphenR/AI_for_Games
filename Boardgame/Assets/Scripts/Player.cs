@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 
 public enum MoveType
@@ -35,7 +33,7 @@ public struct Move
     }
     public void MakeMove()
     {
-        piece.SetPosition(destination, direction);
+        piece.SetPosition(destination.GetCoordinates(), direction);
         piece.EndMove();
     }
     /// <summary>
@@ -44,7 +42,7 @@ public struct Move
     /// <param name="recursive">If true, will consider the moves that the piece could make next turn</param>
     public void SetWeights(bool recursive = false)
     {
-        SetWeights(piece.GetHeadLocation(), piece.GetDirection(), recursive);
+        SetWeights(piece.GetHeadSquare(), piece.GetDirection(), recursive);
     }
     /// <summary>
     /// Calculates the AI's desire to perform this move
@@ -55,14 +53,15 @@ public struct Move
         string mods = "";
         bool inHarmsWay = false;
         bool canDoThatNow = !recursive && CanDoThatNow();
+        BoardState board = startHead.board;
         //Finds all the squares that will have your tail if you make the move, and those that have your tail when you start this move
-        GridSquare[] tailSquares = GridManager.SquaresInDirection(destination, GridManager.OppositeDirection(direction), piece.GetLength() - 1, false);
-        GridSquare[] startTailSquares = GridManager.SquaresInDirection(startHead, GridManager.OppositeDirection(startDirection), piece.GetLength() - 1, false);
+        GridSquare[] tailSquares = board.SquaresInDirection(destination, GridManager.OppositeDirection(direction), piece.GetLength() - 1, false);
+        GridSquare[] startTailSquares = board.SquaresInDirection(startHead, GridManager.OppositeDirection(startDirection), piece.GetLength() - 1, false);
         
         //Prioritise moving if you are currently in harms way
         foreach (Move opponentMove in owner.GetDangerousOpponentMoves())
         {
-            if(startTailSquares.Contains(opponentMove.destination) && !Piece.MoveBlockedByPiece(opponentMove.piece.GetHeadLocation(), opponentMove.destination, opponentMove.destination, opponentMove.direction, opponentMove.piece))
+            if(startTailSquares.Contains(opponentMove.destination) && !Piece.MoveBlockedByPiece(opponentMove.piece.GetHeadSquare(board), opponentMove.destination, opponentMove.destination, opponentMove.direction, opponentMove.piece))
             {
                 //It either yes or no, not mutiplicative of how many there are
                 mods += " escape";
@@ -87,15 +86,15 @@ public struct Move
                 GridSquare[] blockingSquares;
                 if(opponentMove.type == MoveType.TAIL_ROTATION)
                 {
-                    blockingSquares = GridManager.SquaresInDirection(opponentMove.piece.GetTailLocation(), opponentMove.direction, opponentMove.piece.GetLength() - 1, false);
+                    blockingSquares = board.SquaresInDirection(opponentMove.piece.GetTailLocation(), opponentMove.direction, opponentMove.piece.GetLength() - 1, false);
                 }
                 else if(opponentMove.type == MoveType.HEAD_ROTATION)
                 {
-                    blockingSquares = GridManager.SquaresInDirection(opponentMove.piece.GetHeadLocation(), GridManager.OppositeDirection(opponentMove.direction), opponentMove.piece.GetLength() - 1, false);
+                    blockingSquares = board.SquaresInDirection(opponentMove.piece.GetHeadSquare(board), GridManager.OppositeDirection(opponentMove.direction), opponentMove.piece.GetLength() - 1, false);
                 }
                 else
                 {
-                    blockingSquares = GridManager.SquaresInDirection(opponentMove.piece.GetHeadLocation(), opponentMove.direction, GridManager.DistanceToSquare(opponentMove.piece.GetHeadLocation(),opponentMove.destination), false);
+                    blockingSquares = board.SquaresInDirection(opponentMove.piece.GetHeadSquare(board), opponentMove.direction, GridManager.DistanceToSquare(opponentMove.piece.GetHeadSquare(board),opponentMove.destination), false);
                 }
                 canBlockNow = !recursive && CanBlockNow(blockingSquares);
                 //Checks if this move would block any of them
@@ -117,7 +116,7 @@ public struct Move
                         break;
                     }
                     //If an ally already blocking them, don't bother
-                    else if(square.GetPiece() && square.GetPiece().GetHeadLocation() == square && square.GetPiece().GetOwner() == owner && square.GetPiece() != piece)
+                    else if(square.GetPiece() && square.GetPiece().GetHeadSquare(board) == square && square.GetPiece().GetOwner() == owner && square.GetPiece() != piece)
                     {
                         moveBlocked = true;
                         break;
@@ -136,7 +135,7 @@ public struct Move
             foreach(GridSquare square in tailSquares)
             {
                 //If the opponent would land on you but is NOT the opponent you would destroy with this move, avoid it
-                if(square == opponentMove.destination && destination.GetPiece() != opponentMove.piece && !Piece.MoveBlockedByPiece(opponentMove.piece.GetHeadLocation(), opponentMove.destination, opponentMove.destination, opponentMove.direction, opponentMove.piece, piece))
+                if(square == opponentMove.destination && destination.GetPiece() != opponentMove.piece && !Piece.MoveBlockedByPiece(opponentMove.piece.GetHeadSquare(board), opponentMove.destination, opponentMove.destination, opponentMove.direction, opponentMove.piece, piece))
                 {
                     mods += " avoid";
                     weight /= owner.aiPreservePieceDesire;
@@ -181,7 +180,7 @@ public struct Move
             int nextTurnNumMoves = 0;
             float nextTurnTotalWeight = 0;
             float nextTurnMaxWeight = 0;
-            List<Move> nextTurnMoves = piece.GetAllMoves(destination, direction, false);
+            List<Move> nextTurnMoves = piece.GetAllMoves(destination.GetCoordinates(), direction, false);
             foreach(Move move in nextTurnMoves)
             {
                 string thisMod = move.SetWeights(destination,direction,false);
@@ -358,7 +357,7 @@ public class Player : MonoBehaviour
         {
             Move move = opponentPotentialMoves[i];
             //Try not to let them destroy your pieces
-            if (move.destination.GetPiece() && move.destination.GetPiece().GetOwner() == this && move.destination.GetPiece().GetHeadLocation() != move.destination)
+            if (move.destination.GetPiece() && move.destination.GetPiece().GetOwner() == this && move.destination.GetPiece().GetHeadLocation() != move.destination.GetCoordinates())
             {
                 move.weight *= aiPreservePieceDesire;
                 if (move.destination.GetPiece().GetCanWin())

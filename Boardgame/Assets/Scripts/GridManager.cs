@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 
 public enum Direction
@@ -28,7 +27,159 @@ public struct Coordinate
     {
         return "" + x + "," + y;
     }
+
+    public static bool operator ==(Coordinate lhs, Coordinate rhs)
+    {
+        return lhs.x == rhs.x && lhs.y == rhs.y;
+    }
+    public static bool operator !=(Coordinate lhs, Coordinate rhs)
+    {
+        return !(lhs == rhs);
+    }
 }
+/// <summary>
+/// A Hypthetical boardstate
+/// </summary>
+public struct BoardState
+{
+    public GridSquare[,] grid;
+    public Piece[,] PlayerPieces;
+    public BoardState(GridSquare[,] _grid)
+    {
+        grid = _grid;// new GridSquare[_grid.GetLength(0), _grid.GetLength(1)];
+        PlayerPieces = new Piece[2,3];
+    }
+    /// <summary>
+    /// Sets the grid & pieces to match the parent
+    /// </summary>
+    /// <param name="parent"></param>
+    public void Inherit(BoardState parent)
+    {
+        //Sets the grid
+        for(int x = 0; x < GridManager.GridSize().x; x++)
+        {
+            for (int y = 0; y < GridManager.GridSize().y; y++)
+            {
+                grid[x, y] = GameObject.Instantiate(parent.grid[x, y]);
+                grid[x, y].board = this;
+            }
+        }
+        //Sets pieces
+        for(int i = 0; i < PlayerPieces.GetLength(0); i++)
+        {
+            for (int j = 0; j < PlayerPieces.GetLength(1); j++)
+            {
+                //Must SetPosition after instantiate to line up all of the GridSquare objects
+                PlayerPieces[i,j] = GameObject.Instantiate(parent.PlayerPieces[i,j]);
+                PlayerPieces[i,j].SetBoard(this);
+                PlayerPieces[i,j].SetPosition(parent.PlayerPieces[i,j].GetPosition());
+            }
+        }
+    }
+    /// <summary>
+    /// Returns the gridsquare in the specified direciton & distance to the start
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public GridSquare SquareInDirection(GridSquare start, Direction direction, int distance)
+    {
+        Coordinate end = GridManager.CoordinateInDirection(start.GetCoordinates(), direction, distance);
+        if (end.x < grid.GetLength(0) && end.y < grid.GetLength(1) && end.x >= 0 && end.y >= 0)
+        {
+            return grid[end.x, end.y];
+        }
+        return null;
+    }
+    /// <summary>
+    /// Returns all of the gridsquares within distance of start along the specified direction. If includeStart is set to true, start will be the first entry
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public GridSquare[] SquaresInDirection(GridSquare start, Direction direction, int distance, bool includeStart)
+    {
+        int offset = 0;
+        int squaresLength = 0;
+        GridSquare[] squares = new GridSquare[distance];
+        if (includeStart)
+        {
+            offset = 1;
+            squaresLength++;
+            squares = new GridSquare[distance + 1];
+            squares[0] = start;
+        }
+        //Finds every square in the direction
+        for (int i = 0; i < distance; i++)
+        {
+            GridSquare newSquare = SquareInDirection(start, direction, i + 1);
+            if (newSquare != null)
+            {
+                squaresLength++;
+                squares[i + offset] = newSquare;
+            }
+            //If it exits the board, resize and return squares
+            else
+            {
+                GridSquare[] tempSquares = new GridSquare[squaresLength];
+                for (int j = 0; j < squaresLength; j++)
+                {
+                    tempSquares[j] = squares[j];
+                }
+                return tempSquares;
+            }
+        }
+        return squares;
+    }
+
+    /// <summary>
+    /// Returns the first piece occupying squares in the direction & distance from start, along with the square it was encountered on. Returns a null collision is none
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public Collision FirstPieceEncountered(GridSquare start, Direction direction, int distance)
+    {
+        GridSquare[] squaresToSearch = SquaresInDirection(start, direction, distance, false);
+        foreach (GridSquare square in squaresToSearch)
+        {
+            if (square && square.GetPiece())
+            {
+                return new Collision(square.GetPiece(), square);
+            }
+        }
+        return new Collision(null, null);
+    }
+
+    public GridSquare GetSquare(Coordinate coordinate)
+    {
+        return grid[coordinate.x, coordinate.y];
+    }
+
+    public static bool operator ==(BoardState lhs, BoardState rhs)
+    {
+        for(int i = 0; i < lhs.PlayerPieces.GetLength(0); i++)
+        {
+            for (int j = 0; j < lhs.PlayerPieces.GetLength(1); j++)
+            {
+                if (lhs.PlayerPieces[i,j].GetPosition() == rhs.PlayerPieces[i,j].GetPosition())
+                {
+                    return false;
+                }
+            }
+        }
+        //If not differences, they are equal
+        return true;
+    }
+    public static bool operator !=(BoardState lhs, BoardState rhs)
+    {
+        return !(lhs == rhs);
+    }
+}
+
 /// <summary>
 /// Specifies a square and a piece
 /// </summary>
@@ -56,7 +207,7 @@ public class GridManager : MonoBehaviour
     [Tooltip("The prefab to spawn the queens")]
     [SerializeField] GameObject queenPrefab;
 
-    GridSquare[,] grid;
+    BoardState primaryBoard;
     float squareSize;
 
     static GridManager instance;
@@ -75,7 +226,7 @@ public class GridManager : MonoBehaviour
         bool rowStartsFirstColor = true;
         //Determines size for the grid
         squareSize = gridPrefab.GetComponent<GridSquare>().GetSize();
-        grid = new GridSquare[gridSize.x, gridSize.y];
+        GridSquare[,] grid = new GridSquare[gridSize.x, gridSize.y];
         Vector2 offset = new Vector2(squareSize * gridSize.x / 2, -squareSize * gridSize.y / 2);
         //Sets up grid
         for (int y = 0; y < gridSize.y; y++)
@@ -105,6 +256,7 @@ public class GridManager : MonoBehaviour
         //Sets the player's homerows
         GameManager.players[0].SetHomeRow(0);
         GameManager.players[1].SetHomeRow(gridSize.y - 1);
+        primaryBoard = new BoardState(grid);
     }
     /// <summary>
     /// Spawns the initial 2 pawns & 1 queen per side
@@ -128,16 +280,23 @@ public class GridManager : MonoBehaviour
             //Queen
             Piece piece = Instantiate(queenPrefab, player.transform).GetComponent<Piece>();
             player.AddPiece(piece);
-            piece.SetPosition(grid[player.GetStartingX(0), player.GetHomeRow()], dir);
+            piece.SetPosition(new Coordinate(player.GetStartingX(0), player.GetHomeRow()), dir);
             //Pawn1
             piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
             player.AddPiece(piece);
-            piece.SetPosition(grid[player.GetStartingX(1), player.GetHomeRow()], dir);
+            piece.SetPosition(new Coordinate(player.GetStartingX(1), player.GetHomeRow()), dir);
             //Pawn2
             piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
             player.AddPiece(piece);
-            piece.SetPosition(grid[player.GetStartingX(2), player.GetHomeRow()], dir);
-
+            piece.SetPosition(new Coordinate(player.GetStartingX(2), player.GetHomeRow()), dir);
+        }
+        //Adds the pieces to the primary board
+        for (int i = 0; i < GameManager.players.Length; i++)
+        {
+            for(int j = 0; j < GameManager.players[i].GetPieces().Count; i++)
+            {
+                primaryBoard.PlayerPieces[i, j] = GameManager.players[i].GetPieces()[j];
+            }
         }
     }
     /// <summary>
@@ -216,84 +375,6 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the gridsquare in the specified direciton & distance to the start
-    /// </summary>
-    /// <param name="start"></param>
-    /// <param name="direction"></param>
-    /// <param name="distance"></param>
-    /// <returns></returns>
-    public static GridSquare SquareInDirection(GridSquare start, Direction direction, int distance)
-    {
-        Coordinate end = CoordinateInDirection(start.GetCoordinates(), direction, distance);
-        if(end.x < instance.gridSize.x && end.y < instance.gridSize.y && end.x >= 0 && end.y >= 0)
-        {
-            return instance.grid[end.x, end.y];
-        }
-        return null;
-    }
-    /// <summary>
-    /// Returns all of the gridsquares within distance of start along the specified direction. If includeStart is set to true, start will be the first entry
-    /// </summary>
-    /// <param name="start"></param>
-    /// <param name="direction"></param>
-    /// <param name="distance"></param>
-    /// <returns></returns>
-    public static GridSquare[] SquaresInDirection(GridSquare start, Direction direction, int distance, bool includeStart)
-    {
-        int offset = 0;
-        int squaresLength = 0;
-        GridSquare[] squares = new GridSquare[distance];
-        if (includeStart)
-        {
-            offset = 1;
-            squaresLength++;
-            squares = new GridSquare[distance + 1];
-            squares[0] = start;
-        }
-        //Finds every square in the direction
-        for (int i = 0; i < distance; i++)
-        {
-            GridSquare newSquare = SquareInDirection(start, direction, i + 1);
-            if(newSquare != null)
-            {
-                squaresLength++;
-                squares[i + offset] = newSquare;
-            }
-            //If it exits the board, resize and return squares
-            else
-            {
-                GridSquare[] tempSquares = new GridSquare[squaresLength];
-                for(int j = 0; j <  squaresLength; j++)
-                {
-                    tempSquares[j] = squares[j];
-                }
-                return tempSquares;
-            }
-        }
-        return squares;
-    }
-
-    /// <summary>
-    /// Returns the first piece occupying squares in the direction & distance from start, along with the square it was encountered on. Returns a null collision is none
-    /// </summary>
-    /// <param name="start"></param>
-    /// <param name="direction"></param>
-    /// <param name="distance"></param>
-    /// <returns></returns>
-    public static Collision FirstPieceEncountered(GridSquare start, Direction direction, int distance)
-    {
-        GridSquare[] squaresToSearch = SquaresInDirection(start, direction, distance, false);
-        foreach(GridSquare square in squaresToSearch)
-        {
-            if(square && square.GetPiece())
-            {
-                return new Collision(square.GetPiece(), square);
-            }
-        }
-        return new Collision(null, null);
-    }
-
-    /// <summary>
     /// Returns the larger of X or Y distance between 2 coordinates
     /// </summary>
     /// <param name="start"></param>
@@ -362,5 +443,15 @@ public class GridManager : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public static Coordinate GridSize()
+    {
+        return instance.gridSize;
+    }
+
+    public static BoardState PrimaryBoard()
+    {
+        return instance.primaryBoard;
     }
 }

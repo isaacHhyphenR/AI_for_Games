@@ -7,6 +7,7 @@ public class GridSquare : MonoBehaviour
     Coordinate coordinates;
     [Tooltip("The piece, if any, occupying this space.")]
     Piece piece = null;
+    public BoardState board;
 
 
     public void SetCoordinates(Coordinate _coordinates)
