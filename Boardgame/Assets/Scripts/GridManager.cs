@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum Direction
@@ -46,7 +47,7 @@ public struct BoardState
     public Piece[,] PlayerPieces;
     public BoardState(GridSquare[,] _grid)
     {
-        grid = _grid;// new GridSquare[_grid.GetLength(0), _grid.GetLength(1)];
+        grid = new GridSquare[_grid.GetLength(0), _grid.GetLength(1)];
         PlayerPieces = new Piece[2,3];
     }
     /// <summary>
@@ -156,6 +157,10 @@ public struct BoardState
 
     public GridSquare GetSquare(Coordinate coordinate)
     {
+        if(grid == null)
+        {
+            Debug.Log("Grid null on GetSquare");
+        }
         return grid[coordinate.x, coordinate.y];
     }
 
@@ -211,6 +216,7 @@ public class GridManager : MonoBehaviour
     float squareSize;
 
     static GridManager instance;
+    GridSquare[,] grid;
 
     void Start()
     {
@@ -226,7 +232,7 @@ public class GridManager : MonoBehaviour
         bool rowStartsFirstColor = true;
         //Determines size for the grid
         squareSize = gridPrefab.GetComponent<GridSquare>().GetSize();
-        GridSquare[,] grid = new GridSquare[gridSize.x, gridSize.y];
+        grid = new GridSquare[gridSize.x, gridSize.y];
         Vector2 offset = new Vector2(squareSize * gridSize.x / 2, -squareSize * gridSize.y / 2);
         //Sets up grid
         for (int y = 0; y < gridSize.y; y++)
@@ -280,14 +286,21 @@ public class GridManager : MonoBehaviour
             //Queen
             Piece piece = Instantiate(queenPrefab, player.transform).GetComponent<Piece>();
             player.AddPiece(piece);
+            piece.SetBoard(primaryBoard);
+            if(piece.GetBoard().grid == null)
+            {
+                Debug.Log("WTF");
+            }
             piece.SetPosition(new Coordinate(player.GetStartingX(0), player.GetHomeRow()), dir);
             //Pawn1
             piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
             player.AddPiece(piece);
+            piece.SetBoard(primaryBoard);
             piece.SetPosition(new Coordinate(player.GetStartingX(1), player.GetHomeRow()), dir);
             //Pawn2
             piece = Instantiate(pawnPrefab, player.transform).GetComponent<Piece>();
             player.AddPiece(piece);
+            piece.SetBoard(primaryBoard);
             piece.SetPosition(new Coordinate(player.GetStartingX(2), player.GetHomeRow()), dir);
         }
         //Adds the pieces to the primary board
@@ -296,6 +309,7 @@ public class GridManager : MonoBehaviour
             for(int j = 0; j < GameManager.players[i].GetPieces().Count; i++)
             {
                 primaryBoard.PlayerPieces[i, j] = GameManager.players[i].GetPieces()[j];
+                GameManager.players[i].GetPieces()[j].SetBoard(primaryBoard);
             }
         }
     }

@@ -194,6 +194,10 @@ public class Piece : MonoBehaviour
             }
         }
         //Moves the piece itself
+        if(headPosition == null)
+        {
+            Debug.Log("Null Board");
+        }
         transform.position = board.GetSquare(headPosition).transform.position + new Vector3(0,heightOffset,0);
         direction = headDirection;
         currentSquares = board.SquaresInDirection(board.GetSquare(headPosition), GridManager.OppositeDirection(direction), length - 1, true);
