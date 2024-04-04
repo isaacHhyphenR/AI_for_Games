@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public struct Board
 {
@@ -51,8 +52,15 @@ public class GameManager : MonoBehaviour
     [Tooltip("The prefab used to display the physical board")]
     [SerializeField] GameObject squarePrefab;
 
+    int currentPlayer;
     BoardSpace[,] displayBoard;
     Board currentBoardState;
+
+    public static UnityEvent<BoardSpace> spaceSelected;
+    public static void SpaceSelected(BoardSpace space)
+    {
+        spaceSelected.Invoke(space);
+    }
 
     private void Start()
     {
@@ -70,6 +78,8 @@ public class GameManager : MonoBehaviour
                 displayBoard[x, y].transform.SetParent(transform, false);
             }
         }
+        //Events
+        spaceSelected.AddListener(BoardSpace space => OnSpaceSelected(space));
     }
 
     /// <summary>
@@ -85,6 +95,16 @@ public class GameManager : MonoBehaviour
                 currentBoardState.SetValue(x,y,newBoardState.GetValue(x, y));
                 displayBoard[x, y].SetDisplay(newBoardState.GetValue(x, y));
             }
+        }
+    }
+
+    void OnSpaceSelected(BoardSpace space)
+    {
+        space.SetDisplay(players[currentPlayer].Character());
+        currentPlayer++;
+        if(currentPlayer >= players.Length)
+        {
+            currentPlayer = 0;
         }
     }
 }

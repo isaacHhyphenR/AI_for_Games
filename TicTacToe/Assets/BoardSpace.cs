@@ -29,4 +29,12 @@ public class BoardSpace : MonoBehaviour
     {
         return transform.localScale.x;
     }
+
+    private void OnMouseDown()
+    {
+        if(displayText.text == "")
+        {
+            GameManager.SpaceSelected(this);
+        }
+    }
 }
