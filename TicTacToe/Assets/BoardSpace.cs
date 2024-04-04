@@ -4,8 +4,20 @@ using TMPro;
 public class BoardSpace : MonoBehaviour
 {
     [SerializeField] TMP_Text displayText;
+    Vector2 coordinates;
 
+    private void OnMouseDown()
+    {
+        if (displayText.text == "" && !GameManager.isAiTurn())
+        {
+            SelectSpace();
+        }
+    }
 
+    void SelectSpace()
+    {
+        GameManager.SpaceSelected(this);
+    }
 
     /// <summary>
     /// Sets which character this space is displaying
@@ -23,18 +35,17 @@ public class BoardSpace : MonoBehaviour
     {
         return displayText.text[0];
     }
-
-
     public float GetSize()
     {
         return transform.localScale.x;
     }
 
-    private void OnMouseDown()
+    public void SetCoordinates(Vector2 _coordinates)
     {
-        if(displayText.text == "")
-        {
-            GameManager.SpaceSelected(this);
-        }
+        coordinates = _coordinates;
+    }
+    public Vector2 GetCoordinates()
+    {
+        return coordinates;
     }
 }

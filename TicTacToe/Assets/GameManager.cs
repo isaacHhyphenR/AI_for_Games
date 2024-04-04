@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -56,23 +57,36 @@ public class GameManager : MonoBehaviour
     BoardSpace[,] displayBoard;
     Board currentBoardState;
 
+    public static GameManager instance;
+
+    ///EVENTS
+    //Space Selected
     public static UnityEvent<BoardSpace> spaceSelected = new UnityEvent<BoardSpace>();
     public static void SpaceSelected(BoardSpace space)
     {
         spaceSelected.Invoke(space);
     }
+    //New Turn
+    public static UnityEvent<Player> newTurn = new UnityEvent<Player>();
+    public static void NewTurn(Player player)
+    {
+        newTurn.Invoke(player);
+    }
 
+    ///FUNCTIONS
     private void OnEnable()
     {
         spaceSelected.AddListener(space => OnSpaceSelected(space));
     }
     private void Start()
     {
+        instance = this;
+
         currentBoardState = new Board(gridSize);
         displayBoard = new BoardSpace[gridSize, gridSize];
         //Spawns the board squares
         float squareSize = squarePrefab.GetComponent<BoardSpace>().GetSize();
-        Vector2 offset = new Vector2(squareSize * gridSize / 2, -squareSize * gridSize / 2);
+        Vector2 offset = new Vector2(squareSize * gridSize / 2 - (squareSize/2), -squareSize * gridSize / 2 + (squareSize / 2));
         for (int x = 0; x < gridSize; x++)
         {
             for (int y = 0; y < gridSize; y++)
@@ -80,8 +94,13 @@ public class GameManager : MonoBehaviour
                 Vector3 newPos = new Vector3(x * squareSize - offset.x, 0, y * -squareSize - offset.y);
                 displayBoard[x, y] = Instantiate(squarePrefab, newPos, Quaternion.identity).GetComponent<BoardSpace>();
                 displayBoard[x, y].transform.SetParent(transform, false);
+                displayBoard[x, y].SetCoordinates(new Vector2(x, y));
+                //Nulls out the grid
+                currentBoardState.SetValue(x, y, ' ');
             }
         }
+        //Displays the current player
+        NewTurn(players[currentPlayer]);
     }
 
     /// <summary>
@@ -103,10 +122,18 @@ public class GameManager : MonoBehaviour
     void OnSpaceSelected(BoardSpace space)
     {
         space.SetDisplay(players[currentPlayer].Character());
+        currentBoardState.SetValue(space.GetCoordinates(), players[currentPlayer].Character());
+        //Advances player
         currentPlayer++;
         if(currentPlayer >= players.Length)
         {
             currentPlayer = 0;
         }
+        NewTurn(players[currentPlayer]);
+    }
+
+    public static bool isAiTurn()
+    {
+        return instance.players[instance.currentPlayer].IsAi();
     }
 }
