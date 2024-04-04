@@ -16,4 +16,14 @@ public class Player : MonoBehaviour
     {
         return isAi;
     }
+
+    /// <summary>
+    /// The AI returns the space it would like to select based on the current board state.
+    /// </summary>
+    /// <param name="currentBoardState"></param>
+    /// <returns></returns>
+    public Vector2 ChooseMove(Board currentBoardState)
+    {
+        return new Vector2(1, 1);
+    }
 }

@@ -14,7 +14,7 @@ public class BoardSpace : MonoBehaviour
         }
     }
 
-    void SelectSpace()
+    public void SelectSpace()
     {
         GameManager.SpaceSelected(this);
     }

@@ -1,4 +1,3 @@
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -31,6 +30,10 @@ public struct Board
     {
         return grid;
     }
+    public int GetGridSize()
+    {
+        return gridSize;
+    }
 
     public void Inherit(Board parent)
     {
@@ -59,6 +62,10 @@ public class GameManager : MonoBehaviour
 
     public static GameManager instance;
 
+
+    public static char EMPTY_SQUARE = ' ';
+    public static char STALEMATE = '\n';
+
     ///EVENTS
     //Space Selected
     public static UnityEvent<BoardSpace> spaceSelected = new UnityEvent<BoardSpace>();
@@ -71,6 +78,18 @@ public class GameManager : MonoBehaviour
     public static void NewTurn(Player player)
     {
         newTurn.Invoke(player);
+    }
+    //Player Won
+    public static UnityEvent<Player> playerWon = new UnityEvent<Player>();
+    public static void PlayerWon(Player player)
+    {
+        playerWon.Invoke(player);
+    }
+    //Stalemate
+    public static UnityEvent stalemate = new UnityEvent();
+    public static void Stalemate()
+    {
+        stalemate.Invoke();
     }
 
     ///FUNCTIONS
@@ -96,11 +115,20 @@ public class GameManager : MonoBehaviour
                 displayBoard[x, y].transform.SetParent(transform, false);
                 displayBoard[x, y].SetCoordinates(new Vector2(x, y));
                 //Nulls out the grid
-                currentBoardState.SetValue(x, y, ' ');
+                currentBoardState.SetValue(x, y, EMPTY_SQUARE);
             }
         }
         //Displays the current player
         NewTurn(players[currentPlayer]);
+    }
+
+    private void Update()
+    {
+        if(isAiTurn())
+        {
+            Vector2 selectedMove = players[currentPlayer].ChooseMove(currentBoardState);
+            displayBoard[(int)selectedMove.x, (int)selectedMove.y].SelectSpace();
+        }
     }
 
     /// <summary>
@@ -123,17 +151,145 @@ public class GameManager : MonoBehaviour
     {
         space.SetDisplay(players[currentPlayer].Character());
         currentBoardState.SetValue(space.GetCoordinates(), players[currentPlayer].Character());
-        //Advances player
-        currentPlayer++;
-        if(currentPlayer >= players.Length)
+        //Checks if game over
+        char winner = IsWinningState(currentBoardState);
+        if(winner == STALEMATE)
         {
-            currentPlayer = 0;
+            Stalemate();
         }
-        NewTurn(players[currentPlayer]);
+        else if(GetPlayer(winner) != null)
+        {
+            PlayerWon(GetPlayer(winner));
+        }
+        //If the game must continue, then it does
+        else
+        {
+            //Advances player
+            currentPlayer++;
+            if (currentPlayer >= players.Length)
+            {
+                currentPlayer = 0;
+            }
+            NewTurn(players[currentPlayer]);
+        }
     }
 
     public static bool isAiTurn()
     {
         return instance.players[instance.currentPlayer].IsAi();
+    }
+    /// <summary>
+    /// Returns the player object with this character
+    /// </summary>
+    /// <param name="character"></param>
+    /// <returns></returns>
+    public Player GetPlayer(char character)
+    {
+        foreach(Player player in players)
+        {
+            if(player.Character() == character)
+            {
+                return player;
+            }
+        }
+        //If not a valid character, return null
+        return null;
+    }
+
+    /// <summary>
+    /// If one of the chars has won in state, returns that char. Returns '\n' if stalemate, returns ' ' otherwise
+    /// </summary>
+    /// <param name="state"></param>
+    /// <returns></returns>
+    public static char IsWinningState(Board state)
+    {
+        char currentWinner = EMPTY_SQUARE;
+        ///Checks columns
+        for (int x = 0; x < state.GetGridSize(); x++)
+        {
+            currentWinner = state.GetValue(x, 0);
+            for (int y = 1; y < state.GetGridSize(); y++)
+            {
+                //If the line is broken, try the next column
+                if (currentWinner == EMPTY_SQUARE || currentWinner != state.GetValue(x, y))
+                {
+                    currentWinner = EMPTY_SQUARE;
+                    break;
+                }
+            }
+            //If one player controls the whole column, return that
+            if (currentWinner != EMPTY_SQUARE)
+            {
+                return currentWinner;
+            }
+        }
+        ///Checks rows
+        for (int y = 0; y < state.GetGridSize(); y++)
+        {
+            currentWinner = state.GetValue(0, y);
+            for (int x = 1; x < state.GetGridSize(); x++)
+            {
+                //If the line is broken, try the next row
+                if (currentWinner == EMPTY_SQUARE || currentWinner != state.GetValue(x, y))
+                {
+                    currentWinner = EMPTY_SQUARE;
+                    break;
+                }
+            }
+            //If one player controls the whole row, return that
+            if (currentWinner != EMPTY_SQUARE)
+            {
+                return currentWinner;
+            }
+        }
+        ///Checks Top Left - Bottom Right diagonal
+        {
+            currentWinner = state.GetValue(0, 0);
+            for (int x = 1; x < state.GetGridSize(); x++)
+            {
+                //If the line is broken, try the next row
+                if (currentWinner == EMPTY_SQUARE || currentWinner != state.GetValue(x, x))
+                {
+                    currentWinner = EMPTY_SQUARE;
+                    break;
+                }
+            }
+            //If one player controls the whole row, return that
+            if (currentWinner != EMPTY_SQUARE)
+            {
+                return currentWinner;
+            }
+        }
+        ///Checks Top Right - Bottom Left diagonal
+        {
+            currentWinner = state.GetValue(0, state.GetGridSize() - 1);
+            for (int x = 1; x < state.GetGridSize(); x++)
+            {
+                //If the line is broken, try the next row
+                if (currentWinner == EMPTY_SQUARE || currentWinner != state.GetValue(x, state.GetGridSize() - 1 - x))
+                {
+                    currentWinner = EMPTY_SQUARE;
+                    break;
+                }
+            }
+            //If one player controls the whole row, return that
+            if (currentWinner != EMPTY_SQUARE)
+            {
+                return currentWinner;
+            }
+        }
+        ///If no-one won, check if there are any spaces left to play
+        for (int x = 0; x < state.GetGridSize(); x++)
+        {
+            for (int y = 0; y < state.GetGridSize(); y++)
+            {
+                if(state.GetValue(x,y) == EMPTY_SQUARE)
+                {
+                    return EMPTY_SQUARE;
+                }
+            }
+        }
+        ///If no square left, stalemant
+        return STALEMATE;
     }
 }
