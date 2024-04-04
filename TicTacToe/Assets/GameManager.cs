@@ -56,12 +56,16 @@ public class GameManager : MonoBehaviour
     BoardSpace[,] displayBoard;
     Board currentBoardState;
 
-    public static UnityEvent<BoardSpace> spaceSelected;
+    public static UnityEvent<BoardSpace> spaceSelected = new UnityEvent<BoardSpace>();
     public static void SpaceSelected(BoardSpace space)
     {
         spaceSelected.Invoke(space);
     }
 
+    private void OnEnable()
+    {
+        spaceSelected.AddListener(space => OnSpaceSelected(space));
+    }
     private void Start()
     {
         currentBoardState = new Board(gridSize);
@@ -78,8 +82,6 @@ public class GameManager : MonoBehaviour
                 displayBoard[x, y].transform.SetParent(transform, false);
             }
         }
-        //Events
-        spaceSelected.AddListener(BoardSpace space => OnSpaceSelected(space));
     }
 
     /// <summary>
