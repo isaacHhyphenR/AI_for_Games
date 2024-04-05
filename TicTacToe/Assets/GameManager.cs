@@ -45,6 +45,37 @@ public struct Board
             }
         }
     }
+    /// <summary>
+    /// Evalutaes whether two boardstates are identical
+    /// </summary>
+    /// <param name="lhs"></param>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    public static bool operator ==(Board lhs, Board rhs)
+    {
+        for (int x = 0; x < lhs.gridSize; x++)
+        {
+            for (int y = 0; y < lhs.gridSize; y++)
+            {
+                if (lhs.grid[x, y] != rhs.grid[x, y])
+                {
+                    return false;
+                }
+            }
+        }
+        //If not differences, they are equal
+        return true;
+    }
+    /// <summary>
+    /// Evalutaes whether two boardstates are NOT identical
+    /// </summary>
+    /// <param name="lhs"></param>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    public static bool operator !=(Board lhs, Board rhs)
+    {
+        return !(lhs == rhs);
+    }
 }
 
 public class GameManager : MonoBehaviour
@@ -165,11 +196,7 @@ public class GameManager : MonoBehaviour
         else
         {
             //Advances player
-            currentPlayer++;
-            if (currentPlayer >= players.Length)
-            {
-                currentPlayer = 0;
-            }
+            currentPlayer = NextPlayer(currentPlayer);
             NewTurn(players[currentPlayer]);
         }
     }
@@ -291,5 +318,19 @@ public class GameManager : MonoBehaviour
         }
         ///If no square left, stalemant
         return STALEMATE;
+    }
+    /// <summary>
+    /// Returns the index of the player who will take a turn after current
+    /// </summary>
+    /// <param name="current"></param>
+    /// <returns></returns>
+    public int NextPlayer(int current)
+    {
+        current++;
+        if(current >= players.Length)
+        {
+            current = 0;
+        }
+        return current;
     }
 }

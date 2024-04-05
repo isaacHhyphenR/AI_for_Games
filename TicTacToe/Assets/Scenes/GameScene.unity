@@ -1323,7 +1323,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   character: 79
-  isAi: 0
+  isAi: 1
 --- !u!4 &2133719039
 Transform:
   m_ObjectHideFlags: 0

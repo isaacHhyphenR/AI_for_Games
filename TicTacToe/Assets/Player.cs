@@ -24,6 +24,8 @@ public class Player : MonoBehaviour
     /// <returns></returns>
     public Vector2 ChooseMove(Board currentBoardState)
     {
+
+
         return new Vector2(1, 1);
     }
 }
