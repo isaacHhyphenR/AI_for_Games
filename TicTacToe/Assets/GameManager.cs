@@ -1,82 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-
-public struct Board
-{
-    int gridSize;
-    char[,] grid;
-    public Board(int _gridSize)
-    {
-        gridSize = _gridSize;
-        grid = new char[gridSize, gridSize];
-    }
-    public char GetValue(int x, int y)
-    {
-        return grid[x, y];
-    }
-    public char GetValue(Vector2 coordinate)
-    {
-        return GetValue((int)coordinate.x, (int)coordinate.y);
-    }
-    public void SetValue(int x, int y, char value)
-    {
-        grid[x, y] = value;
-    }
-    public void SetValue(Vector2 coordinate, char value)
-    {
-        SetValue((int)coordinate.x, (int)coordinate.y, value);
-    }
-    public char[,] GetGrid()
-    {
-        return grid;
-    }
-    public int GetGridSize()
-    {
-        return gridSize;
-    }
-
-    public void Inherit(Board parent)
-    {
-        for(int x = 0; x < gridSize; x++)
-        {
-            for(int y = 0; y < gridSize; y++)
-            {
-                SetValue(x, y, parent.GetValue(x, y));
-            }
-        }
-    }
-    /// <summary>
-    /// Evalutaes whether two boardstates are identical
-    /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
-    public static bool operator ==(Board lhs, Board rhs)
-    {
-        for (int x = 0; x < lhs.gridSize; x++)
-        {
-            for (int y = 0; y < lhs.gridSize; y++)
-            {
-                if (lhs.grid[x, y] != rhs.grid[x, y])
-                {
-                    return false;
-                }
-            }
-        }
-        //If not differences, they are equal
-        return true;
-    }
-    /// <summary>
-    /// Evalutaes whether two boardstates are NOT identical
-    /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
-    public static bool operator !=(Board lhs, Board rhs)
-    {
-        return !(lhs == rhs);
-    }
-}
 
 public class GameManager : MonoBehaviour
 {
@@ -319,6 +243,56 @@ public class GameManager : MonoBehaviour
         ///If no square left, stalemant
         return STALEMATE;
     }
+
+    /// <summary>
+    /// Returns an array of all the potential board state that could result from the current one
+    /// </summary>
+    /// <param name="initialState"></param>
+    /// <param name="currentPlayer"></param>
+    /// <returns></returns>
+    public static List<Node> GenerateNextStates(Node initialState, Player currentPlayer)
+    {
+        return GenerateNextStates(initialState, currentPlayer.Character());
+    }
+    /// <summary>
+    /// Returns an array of all the potential board state that could result from the current one
+    /// </summary>
+    /// <param name="initialState"></param>
+    /// <param name="currentPlayer"></param>
+    /// <returns></returns>
+    public static List<Node> GenerateNextStates(Node initialState, char currentPlayer)
+    {
+        List<Node> nodes = new List<Node>();
+        Board initialBoard = initialState.state;
+        int statesGenerated = 0;
+        for(int x = 0; x < initialBoard.GetGridSize(); x++)
+        {
+            for (int y = 0; y < initialBoard.GetGridSize(); y++)
+            {
+                //If X,Y is not yet claimed, claims it
+                if(initialBoard.GetValue(x,y) == EMPTY_SQUARE)
+                {
+                    Board newBoard = new Board(instance.gridSize);
+                    newBoard.Inherit(initialBoard);
+                    newBoard.SetValue(x, y, currentPlayer);
+                    nodes.Add(new Node(newBoard, initialState));
+                    statesGenerated++;
+                }
+            }
+        }
+        return nodes;
+    }
+
+
+    /// <summary>
+    /// Returns the index of the player who will take a turn after current
+    /// </summary>
+    /// <param name="current"></param>
+    /// <returns></returns>
+    public int NextPlayer(char current)
+    {
+        return NextPlayer(GetPlayer(current));
+    }
     /// <summary>
     /// Returns the index of the player who will take a turn after current
     /// </summary>
@@ -332,5 +306,22 @@ public class GameManager : MonoBehaviour
             current = 0;
         }
         return current;
+    }
+    /// <summary>
+    /// Returns the index of the player who will take a turn after current
+    /// </summary>
+    /// <param name="current"></param>
+    /// <returns></returns>
+    public int NextPlayer(Player current)
+    {
+        for(int i = 0; i < players.Length; i++)
+        {
+            if (players[i] == current)
+            {
+                return NextPlayer(i);
+            }
+        }
+        //If current isn't in the array somehow
+        return currentPlayer;
     }
 }
