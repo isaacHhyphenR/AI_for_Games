@@ -36,16 +36,16 @@ public class Player : MonoBehaviour
         while (openList.Count > 0 && winningNode == null)
         {
             Node head = openList.First();
-            closedList.Add(openList.First());
-            openList.Remove(openList.First());
-            Player playerWithTurn = GameManager.instance.GetPlayer(head.state.GetLastMove().character);
+            closedList.Add(head);
+            openList.Remove(head);
+            Player playerWithTurn = GameManager.instance.NextPlayerObject(head.state.GetLastMove().character);
             if (playerWithTurn == null)
             {
                 playerWithTurn = this;
             }
             List<Node> tempList = GameManager.GenerateNextStates(head, playerWithTurn);
             //If this was your move, only consider if it does NOT allow the enemy to win
-            if(playerWithTurn == this)
+            if(playerWithTurn != this)
             {
                 //Checks if it allows the enemy to win
                 bool canLose = false;
@@ -117,7 +117,7 @@ public class Player : MonoBehaviour
         }
         if (tail != null)
         {
-            while(tail.parent != initialState)
+            while(tail.parent.state != initialState)
             {
                 tail = tail.parent;
             }
@@ -139,65 +139,6 @@ public class Player : MonoBehaviour
         }
         //This will never get called, but throws errors otherwise
         return new Vector2(0, 0);
-
-
-        /*
-        //Generates the starting nodes from the current state
-        openList = GameManager.GenerateNextStates(initialState,this);
-        //Checks all subsequent moves using modified A*
-        while (openList.Count > 0)
-        {
-            Node head = openList.First();
-            openList.Remove(head);
-            closedList.Add(head);
-            //Checks whether this node is an endstate.
-            char winner = GameManager.IsWinningState(head.state);
-            if(winner == character)
-            {
-                winningNodes.Add(head);
-                continue;
-            }
-            if (winner == GameManager.STALEMATE)
-            {
-                stalemateNodes.Add(head);
-                continue;
-            }
-            if (winner != GameManager.EMPTY_SQUARE)
-            {
-                willLose.Add(head.parent);
-                continue;
-            }
-            //If you're still here the node is not an end node, so add its children to the open list for investigation
-            List<Node> tempNodes = GameManager.GenerateNextStates(head.state, this);
-            foreach(Node n in tempNodes)
-            {
-                if(!ListContainsState(closedList,n.state) && !ListContainsState(openList, n.state) && !ListContainsState(willLose,n.state))
-                {
-                    openList.Add(n);
-                }
-            }
-        }
-        //Once you've generated all board states, choose a winning path
-        foreach(Node winner in winningNodes)
-        {
-            //Make sure this node won't result in a loss
-
-        }
-        */
-    }
-
-
-    List<Node> RemoveNodeFromList(List<Node> list, Board board)
-    {
-        List<Node> safeList = new List<Node>();
-        foreach(Node n in list)
-        {
-            if(n.state != board)
-            {
-                safeList.Add(n);
-            }
-        }
-        return safeList;
     }
 
     bool ListContainsState(List<Node> list, Board state)
@@ -205,28 +146,6 @@ public class Player : MonoBehaviour
         foreach (Node n in list)
         {
             if (n.state == state)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool ListContainsState(List<Board> list, Board state)
-    {
-        foreach (Board b in list)
-        {
-            if (b == state)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool ArrayContainsState(Board[] array, Board state)
-    {
-        foreach(Board b in array)
-        {
-            if(b == state)
             {
                 return true;
             }

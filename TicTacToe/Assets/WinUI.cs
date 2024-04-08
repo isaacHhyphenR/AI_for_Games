@@ -50,6 +50,7 @@ public class WinUI : MonoBehaviour
     {
         if(activationTimer > clickActivationTime)
         {
+            GameManager.gameOver = false;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }

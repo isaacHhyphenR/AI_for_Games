@@ -8,7 +8,7 @@ public class BoardSpace : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (displayText.text == "" && !GameManager.isAiTurn())
+        if (displayText.text == "" && !GameManager.isAiTurn() && !GameManager.gameOver)
         {
             SelectSpace();
         }

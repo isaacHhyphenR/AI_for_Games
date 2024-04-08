@@ -14,8 +14,10 @@ public class GameManager : MonoBehaviour
     int currentPlayer;
     BoardSpace[,] displayBoard;
     Board currentBoardState;
+    bool takeTurnNow = false;
 
     public static GameManager instance;
+    public static bool gameOver = false;
 
 
     public static char EMPTY_SQUARE = ' ';
@@ -79,25 +81,18 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if(isAiTurn())
+        if(!gameOver)
         {
-            Vector2 selectedMove = players[currentPlayer].ChooseMove(currentBoardState);
-            displayBoard[(int)selectedMove.x, (int)selectedMove.y].SelectSpace();
-        }
-    }
-
-    /// <summary>
-    /// Sets both the currentBoardState & displayBoard to match the newBoardState
-    /// </summary>
-    /// <param name="board"></param>
-    void UpdateBoard(Board newBoardState)
-    {
-        for(int x = 0; x < gridSize; x++)
-        {
-            for(int y = 0; y < gridSize ; y++)
+            if (isAiTurn() && takeTurnNow)
             {
-                currentBoardState.SetValue(x,y,newBoardState.GetValue(x, y));
-                displayBoard[x, y].SetDisplay(newBoardState.GetValue(x, y));
+                takeTurnNow = false;
+                Vector2 selectedMove = players[currentPlayer].ChooseMove(currentBoardState);
+                displayBoard[(int)selectedMove.x, (int)selectedMove.y].SelectSpace();
+            }
+            else if (isAiTurn())
+            {
+                //So that the player's turn gets displayed before the Ai calculates
+                takeTurnNow = true;
             }
         }
     }
@@ -114,6 +109,7 @@ public class GameManager : MonoBehaviour
         }
         else if(GetPlayer(winner) != null)
         {
+            gameOver = true;
             PlayerWon(GetPlayer(winner));
         }
         //If the game must continue, then it does
@@ -323,5 +319,14 @@ public class GameManager : MonoBehaviour
         }
         //If current isn't in the array somehow
         return currentPlayer;
+    }
+    /// <summary>
+    /// Returns the index of the player who will take a turn after current
+    /// </summary>
+    /// <param name="current"></param>
+    /// <returns></returns>
+    public Player NextPlayerObject(char current)
+    {
+        return players[NextPlayer(GetPlayer(current))];
     }
 }
