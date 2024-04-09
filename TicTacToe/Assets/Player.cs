@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -28,12 +29,13 @@ public class Player : MonoBehaviour
     {
         List<Node> openList = new List<Node>();
         List<Node> closedList = new List<Node>();
-        Node stalemateNode = null;
-        Node winningNode = null;
+        List<Node> stalemateNodes = new List<Node>();
+        List<Node> winningNodes = new List<Node>();
+        List<Node> losingParents = new List<Node>();
 
         openList.Add(new Node(initialState, null));
         //Checks all move paths using modified A*
-        while (openList.Count > 0 && winningNode == null)
+        while (openList.Count > 0)
         {
             Node head = openList.First();
             closedList.Add(head);
@@ -43,25 +45,39 @@ public class Player : MonoBehaviour
             {
                 playerWithTurn = this;
             }
-            List<Node> tempList = GameManager.GenerateNextStates(head, playerWithTurn);
+            head.children = GameManager.GenerateNextStates(head, playerWithTurn);
             //If this was your move, only consider if it does NOT allow the enemy to win
-            if(playerWithTurn != this)
+            if (playerWithTurn != this)
             {
                 //Checks if it allows the enemy to win
                 bool canLose = false;
-                foreach (Node node in tempList)
+                bool canStalemate = false;
+                foreach (Node node in head.children)
                 {
                     char winner = GameManager.IsWinningState(node.state);
-                    if (winner != GameManager.EMPTY_SQUARE && winner != GameManager.STALEMATE)
+                    if (winner == GameManager.STALEMATE)
                     {
+                        canStalemate = true;
+                    }
+                    else if (winner != GameManager.EMPTY_SQUARE)
+                    {
+                        losingParents.Add(head);
                         canLose = true;
                         break;
                     }
                 }
-                //If it does not, add its children to the open list
-                if (!canLose)
+                //If it doesn't result in a loss, add its children to the stalemate list
+                if (!canLose && canStalemate)
                 {
-                    foreach (Node node in tempList)
+                    foreach (Node node in head.children)
+                    {
+                        stalemateNodes.Add(node);
+                    }
+                }
+                //If it does not result in a loss or end of game, add children to open list
+                else if(!canLose)
+                {
+                    foreach (Node node in head.children)
                     {
                         if (!ListContainsState(closedList, node.state))
                         {
@@ -75,19 +91,19 @@ public class Player : MonoBehaviour
             {
                 bool endNode = false;
                 //Checks if any children result in a win or stalemate
-                foreach (Node node in tempList)
+                foreach (Node node in head.children)
                 {
                     char winner = GameManager.IsWinningState(node.state);
                     //If this move lets you win, no need to search the tree further
                     if (winner == character)
                     {
-                        winningNode = node;
+                        winningNodes.Add(node);
                         endNode = true;
                         break;
                     }
                     if (winner == GameManager.STALEMATE)
                     {
-                        stalemateNode = node;
+                        stalemateNodes.Add(node);
                         endNode = true;
                         break;
                     }
@@ -95,7 +111,7 @@ public class Player : MonoBehaviour
                 //If this doesn't end the game, add its children to the open list
                 if(!endNode)
                 {
-                    foreach (Node node in tempList)
+                    foreach (Node node in head.children)
                     {
                         if (!ListContainsState(closedList, node.state))
                         {
@@ -105,35 +121,93 @@ public class Player : MonoBehaviour
                 }
             }
         }
-        //Once all nodes have been searched, try to trace a path from a winning or at least stalemate node
-        Node tail = null;
-        if(winningNode != null)
+        /////////Once all nodes have been searched, try to trace a path from a winning or at least stalemate node
+        //Blocks off all decisions that lead to loss, assuming enemy perfect play
+        List<Node> closedLosingParents = new List<Node>();
+        while (losingParents.Count > 0)
         {
-            tail = winningNode;
-        }
-        else if(stalemateNode != null)
-        {
-            tail = stalemateNode;
-        }
-        if (tail != null)
-        {
-            while(tail.parent.state != initialState)
+            Node head = losingParents.First();
+            losingParents.Remove(head);
+            closedLosingParents.Add(head);
+            //If the head was opponent's move, parent is automatically a loss because the enemy can choose head
+            if (head.parent != null && head.state.GetLastMove().character != character)
             {
+                losingParents.Add(head.parent);
+                //move all losing children to the closed list so we don't have to deal with them
+                foreach (Node child in head.parent.children)
+                {
+                    if (child != head && losingParents.Contains(child))
+                    {
+                        closedLosingParents.Add(child);
+                        losingParents.Remove(child);
+                    }
+                }
+            }
+            //If the head was your move, check whether they can win no matter which choice you make from parent
+            else if (head.parent != null)
+            {
+                bool allLosses = true;
+                foreach (Node child in head.parent.children)
+                {
+                    if (child != head)
+                    {
+                        if (losingParents.Contains(child))
+                        {
+                            closedLosingParents.Add(child);
+                            losingParents.Remove(child);
+                        }
+                        else
+                        {
+                            allLosses = false;
+                        }
+                    }
+                }
+                if (allLosses)
+                {
+                    losingParents.Add(head.parent);
+                }
+            }
+        }
+        //Adds all the stalemate nodes into the winning list so that it can search them all at once for a path the enemy will allow
+        foreach (Node stalemate in stalemateNodes)
+        {
+            winningNodes.Add(stalemate);
+        }
+        foreach (Node winner in winningNodes)
+        {
+            bool clearPath = true;
+            Node tail = winner;
+            while (tail.parent.state != initialState)
+            {
+                if(closedLosingParents.Contains(tail))
+                {
+                    clearPath = false;
+                    break;
+                }
                 tail = tail.parent;
             }
-            return new Vector2(tail.state.GetLastMove().x, tail.state.GetLastMove().y);
+            if (clearPath)
+            {
+                if(stalemateNodes.Contains(winner))
+                {
+                    Debug.Log("Stalemate");
+                }
+                else
+                {
+                    Debug.Log("Win");
+                }
+                return new Vector2(tail.state.GetLastMove().x, tail.state.GetLastMove().y);
+            }
         }
         //If there were no winnable or stalematable paths, take the first possible option
-        else
+        for (int x = 0; x < initialState.GetGridSize(); x++)
         {
-            for (int x = 0; x < initialState.GetGridSize(); x++)
+            for (int y = 0; y < initialState.GetGridSize(); y++)
             {
-                for (int y = 0; y < initialState.GetGridSize(); y++)
+                if(initialState.GetValue(x,y) == GameManager.EMPTY_SQUARE)
                 {
-                    if(initialState.GetValue(x,y) == GameManager.EMPTY_SQUARE)
-                    {
-                        return new Vector2(x, y);
-                    }
+                    Debug.Log("Lose");
+                    return new Vector2(x, y);
                 }
             }
         }
