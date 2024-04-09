@@ -177,14 +177,21 @@ public class Player : MonoBehaviour
         {
             bool clearPath = true;
             Node tail = winner;
-            while (tail.parent.state != initialState)
+            while (true)
             {
                 if(closedLosingParents.Contains(tail))
                 {
                     clearPath = false;
                     break;
                 }
-                tail = tail.parent;
+                else if(tail.parent.state == initialState)
+                {
+                    break;
+                }
+                else
+                {
+                    tail = tail.parent;
+                }
             }
             if (clearPath)
             {
